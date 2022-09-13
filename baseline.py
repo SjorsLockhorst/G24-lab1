@@ -1,4 +1,4 @@
-"""Module that implements the two baselines as mentioned in the assignments."""
+"""Module that implements the two baselines a mentioned in the assignments."""
 
 
 def assign_most_frequent():
