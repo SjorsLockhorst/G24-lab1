@@ -26,7 +26,7 @@ def read_data():
 
             # Add the rest of the line as a string to the sentences
             sentences.append(sentence)
-    return dialog_acts, sentences
+    return sentences, dialog_acts
 
 
 def split_data(x, y, train_percentage):
@@ -41,5 +41,9 @@ def split_data(x, y, train_percentage):
 
 def create_dataset(train_percentage=85):
     """Creates dataset by reading and splitting dataset."""
+    if not train_percentage > 0 and train_percentage < 100:
+        raise ValueError(
+            "Must assign a non negative integer percentage to training data."
+        )
     all_x, all_y = read_data()
     return split_data(all_x, all_y, train_percentage)
