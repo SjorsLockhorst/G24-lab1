@@ -18,3 +18,4 @@ if __name__ == "__main__":
         pickle.dump(model, model_file)
     with open(os.path.join(DIR, VOC_FILE), "wb") as voc_file:
         pickle.dump(vocabulary, voc_file)
+    print(f"Done training, saved in {DIR}.")

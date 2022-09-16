@@ -1,18 +1,5 @@
-import os
-import pickle
-
 from vectorize import vectorize
-
-
-def load_model():
-    DIR = "models/"
-    LOG_REG_PATH = os.path.join(DIR, "log_reg.pickle")
-    VOC_PATH = os.path.join(DIR, "vocabulary.pickle")
-    with open(LOG_REG_PATH, "rb") as file:
-        model = pickle.load(file)
-    with open(VOC_PATH, "rb") as file:
-        vocabulary = pickle.load(file)
-    return model, vocabulary
+from machine_learning import load_model
 
 
 if __name__ == "__main__":

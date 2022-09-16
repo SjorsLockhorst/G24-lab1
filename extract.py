@@ -31,6 +31,7 @@ def read_data():
 
 def split_data(x, y, train_percentage):
     """Splits data into train and test dataset."""
+    # TODO: Add random split of elements
     split = math.floor(len(x) * train_percentage / 100)
     x_train = x[:split]
     y_train = y[:split]
@@ -41,6 +42,7 @@ def split_data(x, y, train_percentage):
 
 def create_dataset(train_percentage=85):
     """Creates dataset by reading and splitting dataset."""
+    # TODO: write datasets to disk instead of only returning them
     if not train_percentage > 0 and train_percentage < 100:
         raise ValueError(
             "Must assign a non negative integer percentage to training data."

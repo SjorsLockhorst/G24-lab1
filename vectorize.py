@@ -6,8 +6,13 @@ from extract import read_data
 
 
 def vectorize(sentence, vocabulary):
+    """Vectorize a sentence based on vocabulary."""
+
+    # Create vector
     vec = np.zeros(len(vocabulary))
-    words = sentence.split()
+
+    # Split into seperate words
+    words = sentence.lower().split()
     counts = Counter(words)
     for word, freq in counts.items():
         if word in vocabulary:
@@ -16,6 +21,7 @@ def vectorize(sentence, vocabulary):
 
 
 def vectorize_all(sentences, vocabulary):
+    """Vectorize some amount of sentences based on vocabulary."""
     matrix = np.zeros((len(sentences), len(vocabulary)))
 
     for sent_id, sent in enumerate(sentences):
@@ -27,6 +33,7 @@ def vectorize_all(sentences, vocabulary):
 
 
 def create_bag_of_words(x):
+    """Create a matrix bag of words representation of data x."""
     word_sentence_map = {}
     for sent_id, sentence in enumerate(x):
         words = sentence.split()
@@ -43,9 +50,3 @@ def create_bag_of_words(x):
         for sent_id, freq in sentences.items():
             feature_matrix[word_id][sent_id] = freq
     return feature_matrix, {word: idx for idx, word in enumerate(word_sentence_map)}
-
-
-if __name__ == "__main__":
-    x, y = read_data()
-    training_data, vocabulary = create_bag_of_words(x)
-    print(vectorize("thank you", vocabulary))
