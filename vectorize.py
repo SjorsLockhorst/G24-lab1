@@ -15,6 +15,17 @@ def vectorize(sentence, vocabulary):
     return vec
 
 
+def vectorize_all(sentences, vocabulary):
+    matrix = np.zeros((len(sentences), len(vocabulary)))
+
+    for sent_id, sent in enumerate(sentences):
+        vec = vectorize(sent, vocabulary)
+        matrix[
+            sent_id:,
+        ] = vec
+    return matrix
+
+
 def create_bag_of_words(x):
     word_sentence_map = {}
     for sent_id, sentence in enumerate(x):
