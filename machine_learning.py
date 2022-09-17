@@ -1,34 +1,53 @@
 import os
 import pickle
 
-from baseline import evaluate
-from extract import create_dataset
-from vectorize import vectorize_all
+from sklearn.linear_model import LogisticRegression
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.pipeline import Pipeline
 
 
-def load_model():
+MODELS = [
+    ("Logistic regression", "log_reg.pickle", LogisticRegression),
+    ("Multinomial naive bayes", "multi_nb.pickle", MultinomialNB),
+    ("Random forest classifier", "random_forest.pickle", RandomForestClassifier),
+    ("Descision tree classifier", "descision_tree.pickle", DecisionTreeClassifier),
+    ("K-nearest neighbors classifier", "k_nearest.pickle", KNeighborsClassifier),
+]
+
+MODEL_DIR = "models/"
+
+
+def load_model(filename):
     """Load model and matching vocabulary."""
-    DIR = "models/"
-    LOG_REG_PATH = os.path.join(DIR, "log_reg.pickle")
-    VOC_PATH = os.path.join(DIR, "vocabulary.pickle")
 
-    with open(LOG_REG_PATH, "rb") as file:
-        model = pickle.load(file)
-    with open(VOC_PATH, "rb") as file:
-        vocabulary = pickle.load(file)
-    return model, vocabulary
+    with open(os.path.join(MODEL_DIR, filename), "rb") as file:
+        return pickle.load(file)
 
 
-def evaluate_log_reg():
-    """Evaluate model based on test set"""
-    _, x_test, _, y_test = create_dataset()
-    log_reg, vocabulary = load_model()
-    x_vectorized = vectorize_all(x_test, vocabulary)
-    res = log_reg.predict(x_vectorized)
-    correct = evaluate(y_test, res)
-    print(f"Correct: {correct:.2f}%")
+def train_model(train_x, train_y, classifier_model, verbose=0):
+    pipe = Pipeline(
+        [("vectorizer", CountVectorizer()), ("classifier", classifier_model())]
+    )
+    return pipe.fit(train_x, train_y)
 
 
-if __name__ == "__main__":
-    print("Testing accuracy of logistic regression...")
-    evaluate_log_reg()
+def save_model(model, filename):
+    with open(os.path.join(MODEL_DIR, filename), "wb") as f:
+        pickle.dump(model, f)
+
+
+def select_model():
+    print("Please select a model")
+    selected = 100
+    while selected > len(MODELS) - 1 or selected < 0:
+        for idx, (name, _, _) in enumerate(MODELS, start=1):
+            print(f"[{idx}]: {name}", end=" ")
+        try:
+            selected = int(input("\n")) - 1
+        except ValueError:
+            print(f"Please select a value in {list(range(1, len(MODELS) + 1))}")
+    return MODELS[selected]

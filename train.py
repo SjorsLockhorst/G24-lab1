@@ -1,22 +1,14 @@
 import pickle
 import os
 
-from sklearn.linear_model import LogisticRegression
 
 from extract import create_dataset
-from vectorize import create_bag_of_words
+from machine_learning import select_model, train_model, save_model
+
 
 if __name__ == "__main__":
-    DIR = "models/"
-    MODEL_FILE = "log_reg.pickle"
-    VOC_FILE = "vocabulary.pickle"
-
     x_train, x_test, y_train, y_test = create_dataset()
-
-    features, vocabulary = create_bag_of_words(x_train)
-    model = LogisticRegression(verbose=1).fit(features.T, y_train)
-    with open(os.path.join(DIR, MODEL_FILE), "wb") as model_file:
-        pickle.dump(model, model_file)
-    with open(os.path.join(DIR, VOC_FILE), "wb") as voc_file:
-        pickle.dump(vocabulary, voc_file)
-    print(f"Done training, saved in {DIR}.")
+    _, filename, model = select_model()
+    print("Training model...")
+    trained_model = train_model(x_train, y_train, model)
+    save_model(trained_model, filename)
