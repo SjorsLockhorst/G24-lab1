@@ -2,6 +2,8 @@
 import os
 import math
 
+from sklearn.model_selection import train_test_split
+
 
 def read_data():
     """Reads data from a path and returns the proper data structure."""
@@ -29,23 +31,7 @@ def read_data():
     return sentences, dialog_acts
 
 
-def split_data(x, y, train_percentage):
-    """Splits data into train and test dataset."""
-    # TODO: Add random split of elements
-    split = math.floor(len(x) * train_percentage / 100)
-    x_train = x[:split]
-    y_train = y[:split]
-    x_test = x[split:]
-    y_test = y[split:]
-    return x_train, y_train, x_test, y_test
-
-
-def create_dataset(train_percentage=85):
+def create_dataset(test_size=0.15):
     """Creates dataset by reading and splitting dataset."""
-    # TODO: write datasets to disk instead of only returning them
-    if not train_percentage > 0 and train_percentage < 100:
-        raise ValueError(
-            "Must assign a non negative integer percentage to training data."
-        )
     all_x, all_y = read_data()
-    return split_data(all_x, all_y, train_percentage)
+    return train_test_split(all_x, all_y, test_size=test_size, random_state=42)

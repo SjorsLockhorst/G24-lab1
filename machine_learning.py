@@ -19,10 +19,9 @@ def load_model():
     return model, vocabulary
 
 
-def evaluate_model():
+def evaluate_log_reg():
     """Evaluate model based on test set"""
-    # TODO: Find better way to reload dataset
-    _, _, x_test, y_test = create_dataset()
+    _, x_test, _, y_test = create_dataset()
     log_reg, vocabulary = load_model()
     x_vectorized = vectorize_all(x_test, vocabulary)
     res = log_reg.predict(x_vectorized)
@@ -31,4 +30,5 @@ def evaluate_model():
 
 
 if __name__ == "__main__":
-    evaluate_model()
+    print("Testing accuracy of logistic regression...")
+    evaluate_log_reg()

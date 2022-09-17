@@ -11,7 +11,8 @@ if __name__ == "__main__":
     MODEL_FILE = "log_reg.pickle"
     VOC_FILE = "vocabulary.pickle"
 
-    x_train, y_train, x_test, y_test = create_dataset()
+    x_train, x_test, y_train, y_test = create_dataset()
+
     features, vocabulary = create_bag_of_words(x_train)
     model = LogisticRegression(verbose=1).fit(features.T, y_train)
     with open(os.path.join(DIR, MODEL_FILE), "wb") as model_file:
