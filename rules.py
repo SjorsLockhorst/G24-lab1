@@ -31,7 +31,7 @@ def is_inform(sentence):
 
 
 def is_negate(sentence):
-    return re.match(r"^.*(not|no).*$", sentence)
+    return re.match(r"^.*(\wnot\w|\wno\w).*$", sentence)
 
 
 def is_null(sentence):
