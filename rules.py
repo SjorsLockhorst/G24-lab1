@@ -2,6 +2,10 @@
 import re
 
 
+def is_hello(sentence):
+    return re.match(r"^.*(hello).*$", sentence)
+
+
 def is_goodbye(sentence):
     return re.match(r"^.*(good? bye)|(\wbye\w).*$", sentence)
 
@@ -43,4 +47,5 @@ DIALOG_ACT_RULE_MAPPING = [
     (is_negate, "negate"),
     (is_goodbye, "bye"),
     (is_null, "null"),
+    (is_hello, "hello"),
 ]
