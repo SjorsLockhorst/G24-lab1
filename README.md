@@ -25,7 +25,7 @@ All other parts of the code that load the models, load these pickle files direct
 
 To evaluate the different machine learning algorithms implemented, run [evaluate.py](evaluate.py).
 
-To run the interactive CLI environment where you can type sentences, and the system predicts the dialog act based on a selected model, run [predict.py](predict.py)
+To run the interactive CLI environment where you can type sentences, and the system predicts the dialog act based on a selected model, run [predict.py](predict.py).
 
 ### Additional
 
