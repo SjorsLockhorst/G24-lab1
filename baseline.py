@@ -1,10 +1,10 @@
 """Module that implements the two baselines as mentioned in the assignments."""
 from collections import Counter
+import re
 
 import numpy as np
 
 from extract import read_data
-from rules import DIALOG_ACT_RULE_MAPPING
 
 
 def get_most_frequent(y):
@@ -17,12 +17,23 @@ def assign_most_frequent(y):
     return [get_most_frequent(y)] * len(y)
 
 
-def assign_rule_based(x, rule_mapping=DIALOG_ACT_RULE_MAPPING, most_frequent="inform"):
+def assign_rule_based(x, most_frequent="inform"):
     """
-    Assign a rule to each sentence in x, based on rules in rule_mapping.
+    Assign a dialog act to each sentence in x based on matching patterns.
 
-    If no rule matches, map the most frequent label.
+    If no pattern matches, predict most frequent.
     """
+    pattern_mapping = [
+        (r"^.*thank.*$", "thankyou"),
+        (r"^.*(what|address|phone|number|post? code|zip? code).*$", "request"),
+        (r"^.*(what|how) about.*$", "reqalts"),
+        (r"^.*(yes|correct).*$", "affirm"),
+        (r"^.*(cheap|price|expensive).*$", "inform"),
+        (r"^.*(\wnot\w|\wno\w).*$", "negate"),
+        (r"^.*(good? bye)|(\wbye\w).*$", "bye"),
+        (r"^.*(unintellgible|noisy|cough|tv_noise).*$", "null"),
+        (r"^.*(hello).*$", "hello"),
+    ]
     # Initialise an empty list to save predictions in
     predicted_labels = []
 
@@ -33,14 +44,14 @@ def assign_rule_based(x, rule_mapping=DIALOG_ACT_RULE_MAPPING, most_frequent="in
         i = 0
         assigned = False
 
-        # While there are rules left to try, and nothing has yet been assigned
-        while not assigned and i < len(rule_mapping):
+        # While there are patterns left to try, and nothing has yet been assigned
+        while not assigned and i < len(pattern_mapping):
 
-            # Get the predicate and label that belongs to it from the rule mapping
-            rule, label = rule_mapping[i]
+            # Get the predicate and label that belongs to it from the pattern mapping
+            patt, label = pattern_mapping[i]
 
-            # If our rule matches
-            if rule(sentence):
+            # If our pattern matches
+            if re.match(patt, sentence):
 
                 # Set assigned, so we won't loop again
                 assigned = True

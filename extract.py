@@ -1,6 +1,5 @@
-"""Module to extract and load data into a usuable format."""
+"""Module to extract and load data."""
 import os
-import math
 
 from sklearn.model_selection import train_test_split
 

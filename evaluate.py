@@ -1,3 +1,4 @@
+"""Script that allows user to select a model and test it's accuracy on the test set."""
 from extract import create_dataset
 from machine_learning import select_model, load_model
 
