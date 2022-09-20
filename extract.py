@@ -1,13 +1,15 @@
 """Module to extract and load data."""
 import os
 
+import pandas as pd
 from sklearn.model_selection import train_test_split
 
+DATA_DIR = "data/"  # Data directory
 
-def read_data():
+
+def read_dialog_data():
     """Reads data from a path and returns the proper data structure."""
 
-    DATA_DIR = "data/"  # Data director
     filepath = os.path.join(
         DATA_DIR, "dialog_acts.dat"
     )  # join filename and path to obtain full system path
@@ -30,7 +32,11 @@ def read_data():
     return sentences, dialog_acts
 
 
-def create_dataset(test_size=0.15):
+def create_dialog_dataset(test_size=0.15):
     """Creates dataset by reading and splitting dataset."""
-    all_x, all_y = read_data()
+    all_x, all_y = read_dialog_data()
     return train_test_split(all_x, all_y, test_size=test_size, random_state=42)
+
+
+def create_restaurant_dataset():
+    return pd.read_csv(os.path.join(DATA_DIR, "restaurant_info.csv"))

@@ -2,7 +2,7 @@ from collections import Counter
 
 import numpy as np
 
-from extract import read_data
+from extract import read_dialog_data
 
 
 def vectorize(sentence, vocabulary):
