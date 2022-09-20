@@ -7,6 +7,7 @@ from baseline import get_most_frequent, assign_rule_based
 from extract import create_dataset
 
 
+# TODO: Fix this, function never gets called
 def predict_machine_learning(model):
     """Simple wrapper function to predict dialog act using a ML model."""
     return model.predict(sentence)
