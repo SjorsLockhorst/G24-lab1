@@ -1,5 +1,6 @@
 import abc
 from typing import Optional
+from random import randint
 
 from machine_learning import load_model
 from extract import create_restaurant_dataset
@@ -22,7 +23,7 @@ class StateInterface(metaclass=abc.ABCMeta):
         return hasattr(subclass, "activate") and callable(subclass.activate)
 
     @abc.abstractmethod
-    def activate(self):
+    def activate(self, information, *args):
         raise NotImplementedError
 
     def __repr__(self):
@@ -30,27 +31,55 @@ class StateInterface(metaclass=abc.ABCMeta):
 
 
 class WelcomeState(StateInterface):
-    def __init__(self, number, next_state_map):
-        super().__init__(number, next_state_map)
-
-    def activate(self):
-        print("Welcome user")
+    def activate(self, information, *args):
+        return input(
+            "Hello , welcome to the Cambridge restaurant system? You can ask for "
+            "restaurants by area , price range or food type . How may I help you?\n"
+        )
 
 
 class ThankYouState(StateInterface):
-    def __init__(self, number, next_state_map):
-        super().__init__(number, next_state_map)
-
-    def activate(self):
+    def activate(self, information, *args):
         print("You're welcome!")
 
 
 class ByeState(StateInterface):
-    def __init__(self, number, next_state_map):
-        super().__init__(number, next_state_map, end=True)
-
-    def activate(self):
+    def activate(self, information, *args):
         print("Good bye")
+
+
+class AskPriceRangeState(StateInterface):
+    def activate(self, information, *args):
+        if not information.pricerange:
+            return input(
+                "Would you like something in the cheap, moderate or expensive price range?"
+            )
+        return ""
+
+
+class AskTypeState(StateInterface):
+    def activate(self, information, *args):
+        if not information.food:
+            return input("What kind of food would you like?\n")
+        return ""
+
+
+class RecommendPlaceState(StateInterface):
+    def activate(self, information, *args):
+        recommendations = args[0]
+
+        recommendation = recommendations.sample()
+        recommendations = recommendations.drop(index=recommendation.index[0])
+
+        message = f"{recommendation['restaurantname'].values[0]} is a nice place"
+        if information.pricerange:
+            message += f" that is {information.pricerange} in price"
+        if information.area:
+            message += f" in the {information.area} of town"
+        if information.food:
+            message += f" that serves {information.food} food"
+        message += ".\n"
+        return input(message)
 
 
 def query(data, expected):
@@ -67,11 +96,6 @@ def query_information(data, information):
     if information.food:
         data = query(data, ("food", information.food))
     return data
-
-
-def entropy(arr):
-    p_values = arr.value_counts() / len(arr)
-    return -np.sum((np.log(p_values) / np.log(2)) * p_values)
 
 
 @dataclass
@@ -96,7 +120,7 @@ class Information:
 
 def get_information(sentence):
     # TODO: Add actual extraction of information
-    return Information("cheap", "south", None)
+    return Information("cheap", None, "italian")
 
 
 def transition(
@@ -108,33 +132,40 @@ def transition(
     verbose=False,
 ):
     # First of all, activate the state
-    state.activate()
+    sentence = state.activate(information, recommendations)
 
     # While we are not at the end
     if not state.end:
 
-        # Get user input
-        sentence = input()
+        # If state returned a sentence
+        if sentence:
+            # User given model to predict dialog act
+            dialog_act = model.predict([sentence.lower()])[0]
 
-        # User given model to predict dialog act
-        dialog_act = model.predict([sentence.lower()])[0]
+            # Extract information from sentence
+            new_information = get_information(sentence)
 
-        # Extract information from sentence
-        new_information = get_information(sentence)
+            # Update information with current information
+            updated_information = information.update(new_information)
 
-        # Update information with current information
-        updated_information = information.update(new_information)
+            # Query data and update recommendations, based on new information
+            new_recommendations = query_information(data, new_information)
 
-        # Query data and update recommendations, based on new information
-        new_recommendations = query_information(data, new_information)
+            # Only if we have a transition we can make, use this next state
+            if dialog_act in state.next_state_map:
+                next_state = state.next_state_map[dialog_act]
 
-        # Only if we have a transition we can make, use this next state
-        if dialog_act in state.next_state_map:
+            # Otherwise, repeat this state
+            else:
+                next_state = state
+
+        # If the state returned nothing, interpret it as a skip
+        else:
+            dialog_act = "skip"
+            updated_information = information
+            new_recommendations = recommendations
             next_state = state.next_state_map[dialog_act]
 
-        # Otherwise, repeat this state
-        else:
-            next_state = state
         if verbose:
             print(f"Dialog act: {dialog_act}")
             print(f"Previous state: {state}")
@@ -158,8 +189,11 @@ def transition(
 if __name__ == "__main__":
     # Activate first state
     data = create_restaurant_dataset()
+    bye = ByeState(4, None, end=True)
 
-    bye = ByeState(3, {})
-    thank_you = ThankYouState(2, {"bye": bye})
-    welcome = WelcomeState(1, {"bye": bye, "thankyou": thank_you})
+    recommend = RecommendPlaceState(4, {"bye", bye})
+    type_food = AskTypeState(3, {"inform": recommend, "skip": recommend})
+    price_range = AskPriceRangeState(2, {"inform": type_food, "skip": type_food})
+    welcome = WelcomeState(1, {"inform": price_range})
+
     transition(welcome, data, verbose=True)
