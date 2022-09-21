@@ -12,9 +12,10 @@ log_reg = load_model("log_reg.pickle")
 
 
 class StateInterface(metaclass=abc.ABCMeta):
-    def __init__(self, number, end=False):
+    def __init__(self, number, next_state_map, end=False):
         self.number = number
         self.end = end
+        self.next_state_map = next_state_map
 
     @classmethod
     def __subclasshook__(cls, subclass):
@@ -29,24 +30,24 @@ class StateInterface(metaclass=abc.ABCMeta):
 
 
 class WelcomeState(StateInterface):
-    def __init__(self, number):
-        super().__init__(number)
+    def __init__(self, number, next_state_map):
+        super().__init__(number, next_state_map)
 
     def activate(self):
         print("Welcome user")
 
 
 class ThankYouState(StateInterface):
-    def __init__(self, number):
-        super().__init__(number)
+    def __init__(self, number, next_state_map):
+        super().__init__(number, next_state_map)
 
     def activate(self):
-        print("Thanks!")
+        print("You're welcome!")
 
 
 class ByeState(StateInterface):
-    def __init__(self, number):
-        super().__init__(number)
+    def __init__(self, number, next_state_map):
+        super().__init__(number, next_state_map, end=True)
 
     def activate(self):
         print("Good bye")
@@ -79,39 +80,86 @@ class Information:
     area: Optional[str]
     food: Optional[str]
 
+    def update(self, other: "Information"):
+        if other.pricerange:
+            self.pricerange = other.pricerange
+        if other.area:
+            self.area = other.area
+        if other.food:
+            self.food = other.food
+        return self
+
+    @property
+    def complete(self):
+        return self.pricerange and self.area and self.food
+
+
+def get_information(sentence):
+    # TODO: Add actual extraction of information
+    return Information("cheap", "south", None)
+
 
 def transition(
     state: StateInterface,
-    sentence: str,
-    information: Information,
+    data: pd.DataFrame,
+    information: Information = Information(None, None, None),
+    recommendations: pd.DataFrame = pd.DataFrame({}),
     model=log_reg,
     verbose=False,
 ):
-    dialog_act = model.predict([sentence.lower()])[0]
-    if verbose:
-        print(f"Dialog act: {dialog_act}")
-        print(f"Previous state: {state}")
-        print("Next state: 'TODO: put next state'")
-    # Extract any information from user input
-    # Fill slots, pricerange, area, food
+    # First of all, activate the state
+    state.activate()
 
-    return state, information
+    # While we are not at the end
+    if not state.end:
+
+        # Get user input
+        sentence = input()
+
+        # User given model to predict dialog act
+        dialog_act = model.predict([sentence.lower()])[0]
+
+        # Extract information from sentence
+        new_information = get_information(sentence)
+
+        # Update information with current information
+        updated_information = information.update(new_information)
+
+        # Query data and update recommendations, based on new information
+        new_recommendations = query_information(data, new_information)
+
+        # Only if we have a transition we can make, use this next state
+        if dialog_act in state.next_state_map:
+            next_state = state.next_state_map[dialog_act]
+
+        # Otherwise, repeat this state
+        else:
+            next_state = state
+        if verbose:
+            print(f"Dialog act: {dialog_act}")
+            print(f"Previous state: {state}")
+            print(f"Next state: {next_state}")
+            print(f"Current information: {updated_information}")
+            print(f"Recommended based on information: {new_recommendations}")
+
+        # Recursively call this function with updated information
+        transition(
+            next_state,
+            data,
+            information=updated_information,
+            recommendations=new_recommendations,
+            model=model,
+            verbose=verbose,
+        )
+    else:
+        return
 
 
 if __name__ == "__main__":
     # Activate first state
     data = create_restaurant_dataset()
-    print(query_information(data, Information("cheap", "west", None)))
-    # bye = ByeState(1)
-    # welcome = WelcomeState(1)
 
-    # current_state: StateInterface = welcome
-    # current_information = Information(None, None, None)
-    # VERBOSE = True
-    # while not current_state.end:
-    #     current_state.activate()
-    #     user_input = input()
-    #     current_state, current_information = transition(
-    #         current_state, user_input, current_information, verbose=VERBOSE
-    #     )
-    # current_state.activate()
+    bye = ByeState(3, {})
+    thank_you = ThankYouState(2, {"bye": bye})
+    welcome = WelcomeState(1, {"bye": bye, "thankyou": thank_you})
+    transition(welcome, data, verbose=True)
