@@ -1,18 +1,5 @@
-"""
-Writing the templates that will extract the user's intention. These intentions will be used to fill the user
-slots that we need to fill (categories from the dataset):
-    pricerange
-    area
-    food
-
-Essentially keyword matching. We want to know if any part of the userinput can fill a slot.*
-Assign keywords to each label present in the dataset. Eg. if userinput contains 'cheap', assign pricerange = cheap
-
-* If a user fills more than one slot in one turn, we should probably implement an exception that skips the user
-questions that now become irrelevant. 
-"""
-
 import pandas as pd
+import re
 
 df = pd.read_csv('data/restaurant_info.csv')
 
@@ -21,41 +8,77 @@ pricerange_labels = df['pricerange'].unique()
 area_labels = df['area'].unique()
 food_labels = df['food'].unique()
 
-def fill_slots(user_input):
-    """
-    Takes a user's turn (type string) as input
-    checks whether it contains any information that can be used to fill slots immediately. 
-    If so, assign the slot (eg pricerange) with the specified label (eg cheap).
+"""Funtions that takes a user's turn (type string) as input after the relevant question.
+Checks whether it contains any information that can be used to fill slots. 
+If so, assigns that slot. If no type is recognized, should ask the user again."""
 
-    If the string doesn't contain a label exactly, look into using templates
-    """
-
+def find_pricerange(user_input):
     user_input = user_input.strip.lower()
 
-    SlotFilled = False
-
-    # First check whether a user explicitly mentions a label
-    for word in user_input:
+    SlotFilled = False # First check whether a user explicitly mentions a label
+    for word in user_input: 
         if word in pricerange_labels:
-            # set pricerange label as 'word'
+            # fill pricerange slot with 'word'
             SlotFilled = True
+    
+    if not SlotFilled:
+        PriceTemplate = re.compile(r"\b\w+\s(priced|pricing|price ?range)\b")
+        mo = regex.search(user_input)
+            if mo:
+                # fill pricerange slot with "mo.group().split()[0]"
+            SlotFilled = True
+            
+    if not SlotFilled:
+        # ask user again.
 
+    return
+
+def find_area(user_input):
+    user_input = user_input.strip.lower()
+    
+    SlotFilled = False # First check whether a user explicitly mentions a label
     for word in user_input:
         if word in area_labels:
-            # set area slot as 'word'
+            # fill area slot with 'word'
             SlotFilled = True
-
-
-    for word in user_input:
-        if word in food_labels:
-            # set food slot as 'word'
-            SlotFilled = True
-
-    # If a user doesn't fill a label, move on to checking if any content was similar to the labels.
 
     if not SlotFilled:
-        # Move on to templates that we prespecified, in the form of:
-        # if "{variable} food" in userinput, check if variable in food_labels
-        # if variable matches a food_label, assign that slot with that label.
+        AreaTemplate = re.compile(r"\b\w+\s(part)\b")
+        mo = regex.search(user_input)
+            if mo:
+                # fill pricerange slot with "mo.group().split()[0]"
+            SlotFilled = True
 
-        pass
+    if not SlotFilled:
+        AreaTemplate2 = re.compile(r"\b(in the|somewhere)\s\w+\b")
+        mo = regex.search(user_input)
+            if mo:
+                # fill pricerange slot with "mo.group().split()[-1]"
+            SlotFilled = True
+            
+    if not SlotFilled:
+        # ask user again.
+
+    return
+
+
+def find_food(user_input):
+    user_input = user_input.strip.lower()
+    
+    SlotFilled = False # First check whether a user explicitly mentions a label
+    for word in user_input:
+        if word in food_labels:
+            # fill food slot with 'word'
+            SlotFilled = True
+
+    if not SlotFilled:
+        FoodTemplate = re.compile(r"\b\w+\s(food|cuisine|kitchen|restaurant|place)\b")
+        mo = regex.search(user_input)
+            if mo:
+                # fill pricerange slot with "mo.group().split()[0]"
+            SlotFilled = True
+            
+    if not SlotFilled:
+        # ask user again.
+
+    return
