@@ -13,6 +13,8 @@ import pandas as pd
 
 log_reg = load_model("log_reg.pickle")
 
+data = create_restaurant_dataset()
+
 
 class StateInterface(metaclass=abc.ABCMeta):
     def __init__(self, number, next_state_map, end=False):
@@ -34,7 +36,6 @@ class StateInterface(metaclass=abc.ABCMeta):
 
 class WelcomeState(StateInterface):
     def activate(self, information, recommendations):
-        data = create_restaurant_dataset()
         sentence = input(
             "Hello , welcome to the Cambridge restaurant system? You can ask for "
             "restaurants by area , price range or food type . How may I help you?\n"
@@ -48,13 +49,13 @@ class WelcomeState(StateInterface):
 class ThankYouState(StateInterface):
     def activate(self, information, recomendations):
         print("You're welcome!\n")
-        return None, information, recomendations
+        return "", information, recomendations
 
 
 class ByeState(StateInterface):
     def activate(self, information, recommendations):
         print("Good bye\n")
-        return None, information, recommendations
+        return "", information, recommendations
 
 
 class AskPriceRangeState(StateInterface):
@@ -93,6 +94,7 @@ class AskAreaState(StateInterface):
 class RecommendPlaceState(StateInterface):
     def activate(self, information, recommendations):
         recommendation = recommendations.sample()
+        recommendations.rename(index={recommendation.index[0]: len(data)}, inplace=True)
 
         message = f"{recommendation['restaurantname'].values[0]} is a nice place"
         if information.pricerange:
@@ -108,7 +110,7 @@ class RecommendPlaceState(StateInterface):
 class NotFoundState(StateInterface):
     def activate(self, information, recommendations):
         sentence = ""
-        message = "There is no restaurant "
+        message = "There is no (other) restaurant "
         if information.pricerange:
             message += f" that is {information.pricerange} in price"
         if information.area:
@@ -119,7 +121,27 @@ class NotFoundState(StateInterface):
         sentence = input(message)
         information.update(get_information(sentence))
 
-        return sentence, information, recommendations
+        return sentence, information, data
+
+
+class RequestAlternativesState(StateInterface):
+    def activate(self, information, recommendations):
+        recommendations = recommendations.drop(index=len(data))
+        if len(recommendations) > 0:
+            recommendation = recommendations.sample()
+
+            recommendations.rename(index={recommendation.index.values[0]: len(data)})
+
+            message = f"{recommendation['restaurantname'].values[0]} is a nice place"
+            if information.pricerange:
+                message += f" that is {information.pricerange} in price"
+            if information.area:
+                message += f" in the {information.area} of town"
+            if information.food:
+                message += f" that serves {information.food} food"
+            message += ".\n"
+            return input(message), information, recommendations
+        return "", information, recommendations
 
 
 def query(data, expected):
@@ -165,7 +187,8 @@ def get_information(sentence):
 
 bye = ByeState(4, None, end=True)
 
-recommend = RecommendPlaceState(5, {"bye": bye})
+reqalts = RequestAlternativesState(6, {})
+recommend = RecommendPlaceState(5, {"reqalts": reqalts})
 ask_area = AskAreaState(4, {"inform": recommend})
 type_food = AskTypeState(3, {"inform": ask_area})
 price_range = AskPriceRangeState(2, {"inform": type_food})
