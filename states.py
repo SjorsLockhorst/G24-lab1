@@ -93,8 +93,6 @@ class AskAreaState(StateInterface):
 class RecommendPlaceState(StateInterface):
     def activate(self, information, recommendations):
         recommendation = recommendations.sample()
-        # TODO: This does not work
-        recommendations = recommendations.drop(index=recommendation.index[0])
 
         message = f"{recommendation['restaurantname'].values[0]} is a nice place"
         if information.pricerange:
@@ -105,6 +103,23 @@ class RecommendPlaceState(StateInterface):
             message += f" that serves {information.food} food"
         message += ".\n"
         return input(message), information, recommendations
+
+
+class NotFoundState(StateInterface):
+    def activate(self, information, recommendations):
+        sentence = ""
+        message = "There is no restaurant "
+        if information.pricerange:
+            message += f" that is {information.pricerange} in price"
+        if information.area:
+            message += f" in the {information.area} of town"
+        if information.food:
+            message += f" that serves {information.food} food."
+        message += "\nPlease try again.\n"
+        sentence = input(message)
+        information.update(get_information(sentence))
+
+        return sentence, information, recommendations
 
 
 def query(data, expected):
@@ -129,6 +144,14 @@ class Information:
     area: Optional[str]
     food: Optional[str]
 
+    def update(self, other):
+        if other.pricerange:
+            self.pricerange = other.pricerange
+        if other.area:
+            self.area = other.area
+        if other.food:
+            self.food = other.food
+
     @property
     def complete(self):
         return self.pricerange and self.area and self.food
@@ -138,6 +161,16 @@ def get_information(sentence):
     return Information(
         match_pricerange(sentence), match_area(sentence), match_food(sentence)
     )
+
+
+bye = ByeState(4, None, end=True)
+
+recommend = RecommendPlaceState(5, {"bye": bye})
+ask_area = AskAreaState(4, {"inform": recommend})
+type_food = AskTypeState(3, {"inform": ask_area})
+price_range = AskPriceRangeState(2, {"inform": type_food})
+not_found = NotFoundState(6, {"inform": price_range})
+welcome = WelcomeState(1, {"inform": price_range})
 
 
 def transition(
@@ -161,17 +194,21 @@ def transition(
         # Query data and update recommendations, based on new information
         # TODO: Fix what happens when 0 rows appear
         # TODO: Go to request when 1 row remains only
-        new_recommendations = query_information(
-            new_recommendations, updated_information
-        )
+        if len(new_recommendations) > 0:
+            new_recommendations = query_information(
+                new_recommendations, updated_information
+            )
 
-        # Only if we have a transition we can make, use this next state
-        if dialog_act in state.next_state_map:
-            next_state = state.next_state_map[dialog_act]
+            # Only if we have a transition we can make, use this next state
+            if dialog_act in state.next_state_map:
+                next_state = state.next_state_map[dialog_act]
 
-        # Otherwise, repeat this state
+            # Otherwise, repeat this state
+            else:
+                next_state = state
+
         else:
-            next_state = state
+            next_state = not_found
 
         if verbose:
             print(f"Dialog act: {dialog_act}")
@@ -194,12 +231,5 @@ def transition(
 
 if __name__ == "__main__":
     # Activate first state
-    bye = ByeState(4, None, end=True)
-
-    recommend = RecommendPlaceState(5, {"bye": bye})
-    ask_area = AskAreaState(4, {"inform": recommend})
-    type_food = AskTypeState(3, {"inform": ask_area})
-    price_range = AskPriceRangeState(2, {"inform": type_food})
-    welcome = WelcomeState(1, {"inform": price_range})
 
     transition(welcome, verbose=True)

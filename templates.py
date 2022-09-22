@@ -7,10 +7,10 @@ If so, assigns that slot. If no type is recognized, should ask the user again.""
 
 def match_sentence(sentence, keywords):
     sentence = sentence.lower().strip()
-    keyword_regex = f"({'|'.join(keywords)})$"
+    keyword_regex = f"({'|'.join(keywords)})"
     result = re.search(keyword_regex, sentence)
     if result:
-        return result.group().split()[0]
+        return result.group(1)
 
 
 def match_pricerange(sentence):
