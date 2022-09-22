@@ -1,12 +1,4 @@
-import pandas as pd
 import re
-
-df = pd.read_csv("data/restaurant_info.csv")
-
-# Making arrays of all possible labels per slot from the dataset
-pricerange_labels = df["pricerange"].unique()
-area_labels = df["area"].unique()
-food_labels = df["food"].unique()
 
 """Funtions that takes a user's turn (type string) as input after the relevant question.
 Checks whether it contains any information that can be used to fill slots.
