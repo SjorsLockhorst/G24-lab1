@@ -1,10 +1,12 @@
 import abc
+from re import match
 from typing import Optional
 from random import randint
 
 from machine_learning import load_model
 from extract import create_restaurant_dataset
 from dataclasses import dataclass
+from templates import match_area, match_food, match_pricerange
 
 import numpy as np
 import pandas as pd
@@ -40,19 +42,19 @@ class WelcomeState(StateInterface):
 
 class ThankYouState(StateInterface):
     def activate(self, information, *args):
-        print("You're welcome!")
+        print("You're welcome!\n")
 
 
 class ByeState(StateInterface):
     def activate(self, information, *args):
-        print("Good bye")
+        print("Good bye\n")
 
 
 class AskPriceRangeState(StateInterface):
     def activate(self, information, *args):
         if not information.pricerange:
             return input(
-                "Would you like something in the cheap, moderate or expensive price range?"
+                "Would you like something in the cheap, moderate or expensive price range?\n"
             )
         return ""
 
@@ -61,6 +63,13 @@ class AskTypeState(StateInterface):
     def activate(self, information, *args):
         if not information.food:
             return input("What kind of food would you like?\n")
+        return ""
+
+
+class AskAreaState(StateInterface):
+    def activate(self, information, *args):
+        if not information.area:
+            return input("What kind of area would you like?\n")
         return ""
 
 
@@ -119,8 +128,9 @@ class Information:
 
 
 def get_information(sentence):
-    # TODO: Add actual extraction of information
-    return Information("cheap", None, "italian")
+    return Information(
+        match_pricerange(sentence), match_area(sentence), match_food(sentence)
+    )
 
 
 def transition(
@@ -191,8 +201,9 @@ if __name__ == "__main__":
     data = create_restaurant_dataset()
     bye = ByeState(4, None, end=True)
 
-    recommend = RecommendPlaceState(4, {"bye", bye})
-    type_food = AskTypeState(3, {"inform": recommend, "skip": recommend})
+    recommend = RecommendPlaceState(5, {"bye": bye})
+    ask_area = AskAreaState(4, {"inform": recommend, "skip": recommend})
+    type_food = AskTypeState(3, {"inform": ask_area, "skip": ask_area})
     price_range = AskPriceRangeState(2, {"inform": type_food, "skip": type_food})
     welcome = WelcomeState(1, {"inform": price_range})
 
