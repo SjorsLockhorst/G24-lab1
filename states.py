@@ -15,10 +15,10 @@ data = create_restaurant_dataset()
 
 
 class StateInterface(metaclass=abc.ABCMeta):
-    def __init__(self, number, next_state_map, end=False):
+    def __init__(self, number, next_state, end=False):
         self.number = number
         self.end = end
-        self.next_state_map = next_state_map
+        self.next_state = next_state
 
     @classmethod
     def __subclasshook__(cls, subclass):
@@ -152,6 +152,12 @@ class RequestAlternativesState(StateInterface):
         return "", information, new_recommendations
 
 
+class RequestInformation(StateInterface):
+    def activate(self, information, recommendations):
+        # recommendation = recommendations.iloc[len(data)]
+        return "", information, recommendations
+
+
 def query(data, expected):
     col, value = expected
     return data[data[col] == value]
@@ -203,8 +209,7 @@ type_food = AskTypeState(3, {"inform": ask_area})
 price_range = AskPriceRangeState(2, {"inform": type_food})
 not_found = NotFoundState(6, {"inform": price_range})
 
-# TODO: Always go to price_range, regardless of dialog act
-welcome = WelcomeState(1, {"inform": price_range})
+welcome = WelcomeState(1, price_range)
 
 
 def transition(
@@ -226,17 +231,17 @@ def transition(
         dialog_act = model.predict([sentence.lower()])[0]
 
         # Query data and update recommendations, based on new information
-        # TODO: Fix what happens when 0 rows appear
-        # TODO: Go to request when 1 row remains only
         if len(new_recommendations) > 0:
 
             # Only if we have a transition we can make, use this next state
-            if dialog_act in state.next_state_map:
-                next_state = state.next_state_map[dialog_act]
-
-            # Otherwise, repeat this state
+            if isinstance(state.next_state, dict):
+                if dialog_act in state.next_state:
+                    next_state = state.next_state[dialog_act]
+                # Otherwise, repeat this state
+                else:
+                    next_state = state
             else:
-                next_state = state
+                next_state = state.next_state
 
         else:
             next_state = not_found

@@ -1,4 +1,5 @@
 import re
+from Levenshtein import distance
 
 """Funtions that takes a user's turn (type string) as input after the relevant question.
 Checks whether it contains any information that can be used to fill slots.
@@ -6,6 +7,21 @@ If so, assigns that slot. If no type is recognized, should ask the user again.""
 
 
 def match_sentence(sentence, keywords):
+    matched = _match_sentence(sentence, keywords)
+    if not matched:
+        words = sentence.split(" ")
+        for word in words:
+            for keyword in keywords:
+                if distance(word, keyword) < 3:
+                    response = input(
+                        f"Didn't recognize {word}, did you mean {keyword}? (yes/no) \n"
+                    )
+                    if response == "yes":
+                        matched = keyword
+    return matched
+
+
+def _match_sentence(sentence, keywords):
     # This is not the best, since it matches any word,
     # word that is in our query could have another semantic meaning to the user
     sentence = sentence.lower().strip()
@@ -13,8 +29,7 @@ def match_sentence(sentence, keywords):
     result = re.search(keyword_regex, sentence)
     if result:
         return result.group(1)
-    # TODO: If this didn't match, match the template
-    # TODO: If template didn't match, use levenstein edit distance
+
     # TODO: Match don't care, any, whatever no preference, then return "ANY".
 
 

@@ -32,3 +32,7 @@ To run the interactive CLI environment where you can type sentences, and the sys
 We wrote the [extract.py](extract.py) module as a helper to load in data from the raw data file(s) in [data/](data/).
 Additionally, we wrote a bag-of-words vectorizer. This was done to gather understanding on how this works, but in the end, the implementation of sklearn was used.
 We kept our original in this repository for reference in the file [vectorize.py](vectorize.py).
+
+### State machine
+
+Run [state.py](state.py) to test our dialog management system.
