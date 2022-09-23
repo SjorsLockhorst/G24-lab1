@@ -1,7 +1,5 @@
 import abc
-from re import match
 from typing import Optional
-from random import randint
 
 from machine_learning import load_model
 from extract import create_restaurant_dataset
@@ -27,7 +25,7 @@ class StateInterface(metaclass=abc.ABCMeta):
         return hasattr(subclass, "activate") and callable(subclass.activate)
 
     @abc.abstractmethod
-    def activate(self, information, *args):
+    def activate(self, information, recommendations):
         raise NotImplementedError
 
     def __repr__(self):
@@ -150,6 +148,7 @@ def query(data, expected):
 
 
 def query_information(data, information):
+    # TODO: Query to take into account when user expresses no preference.
     data = data.copy()
     if information.pricerange:
         data = query(data, ("pricerange", information.pricerange))
@@ -193,6 +192,8 @@ ask_area = AskAreaState(4, {"inform": recommend})
 type_food = AskTypeState(3, {"inform": ask_area})
 price_range = AskPriceRangeState(2, {"inform": type_food})
 not_found = NotFoundState(6, {"inform": price_range})
+
+# TODO: Always go to price_range, regardless of dialog act
 welcome = WelcomeState(1, {"inform": price_range})
 
 
@@ -218,6 +219,8 @@ def transition(
         # TODO: Fix what happens when 0 rows appear
         # TODO: Go to request when 1 row remains only
         if len(new_recommendations) > 0:
+
+            # TODO: Maybe query only in the recommend state
             new_recommendations = query_information(
                 new_recommendations, updated_information
             )

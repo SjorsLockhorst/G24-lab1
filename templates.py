@@ -6,11 +6,16 @@ If so, assigns that slot. If no type is recognized, should ask the user again.""
 
 
 def match_sentence(sentence, keywords):
+    # This is not the best, since it matches any word,
+    # word that is in our query could have another semantic meaning to the user
     sentence = sentence.lower().strip()
     keyword_regex = f"({'|'.join(keywords)})"
     result = re.search(keyword_regex, sentence)
     if result:
         return result.group(1)
+    # TODO: If this didn't match, match the template
+    # TODO: If template didn't match, use levenstein edit distance
+    # TODO: Match don't care, any, whatever no preference, then return "ANY".
 
 
 def match_pricerange(sentence):
