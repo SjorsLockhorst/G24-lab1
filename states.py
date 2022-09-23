@@ -41,7 +41,9 @@ class WelcomeState(StateInterface):
         # Extract information from sentence
         new_information = get_information(sentence)
 
-        return sentence, new_information, data
+        new_recommendations = query_information(data, new_information)
+
+        return sentence, new_information, new_recommendations
 
 
 class ThankYouState(StateInterface):
@@ -66,7 +68,9 @@ class AskPriceRangeState(StateInterface):
                 )
                 information.pricerange = match_pricerange(sentence)
 
-        return sentence, information, recommendations
+        new_recommendations = query_information(data, information)
+
+        return sentence, information, new_recommendations
 
 
 class AskTypeState(StateInterface):
@@ -76,7 +80,8 @@ class AskTypeState(StateInterface):
             while not information.food:
                 sentence = input("What kind of food would you like?\n")
                 information.food = match_food(sentence)
-        return sentence, information, recommendations
+        new_recommendations = query_information(data, information)
+        return sentence, information, new_recommendations
 
 
 class AskAreaState(StateInterface):
@@ -86,13 +91,16 @@ class AskAreaState(StateInterface):
             while not information.area:
                 sentence = input("What kind of area would you like?\n")
                 information.area = match_area(sentence)
-        return sentence, information, recommendations
+        new_recommendations = query_information(data, information)
+        return sentence, information, new_recommendations
 
 
 class RecommendPlaceState(StateInterface):
     def activate(self, information, recommendations):
         recommendation = recommendations.sample()
-        recommendations.rename(index={recommendation.index[0]: len(data)}, inplace=True)
+        new_recommendations = recommendations.rename(
+            index={recommendation.index[0]: len(data)}
+        )
 
         message = f"{recommendation['restaurantname'].values[0]} is a nice place"
         if information.pricerange:
@@ -102,7 +110,7 @@ class RecommendPlaceState(StateInterface):
         if information.food:
             message += f" that serves {information.food} food"
         message += ".\n"
-        return input(message), information, recommendations
+        return input(message), information, new_recommendations
 
 
 class NotFoundState(StateInterface):
@@ -124,11 +132,13 @@ class NotFoundState(StateInterface):
 
 class RequestAlternativesState(StateInterface):
     def activate(self, information, recommendations):
-        recommendations = recommendations.drop(index=len(data))
-        if len(recommendations) > 0:
-            recommendation = recommendations.sample()
+        new_recommendations = recommendations.drop(index=len(data))
+        if len(new_recommendations) > 0:
+            recommendation = new_recommendations.sample()
 
-            recommendations.rename(index={recommendation.index.values[0]: len(data)})
+            new_recommendations = new_recommendations.rename(
+                index={recommendation.index.values[0]: len(data)}
+            )
 
             message = f"{recommendation['restaurantname'].values[0]} is a nice place"
             if information.pricerange:
@@ -138,8 +148,8 @@ class RequestAlternativesState(StateInterface):
             if information.food:
                 message += f" that serves {information.food} food"
             message += ".\n"
-            return input(message), information, recommendations
-        return "", information, recommendations
+            return input(message), information, new_recommendations
+        return "", information, new_recommendations
 
 
 def query(data, expected):
@@ -220,11 +230,6 @@ def transition(
         # TODO: Go to request when 1 row remains only
         if len(new_recommendations) > 0:
 
-            # TODO: Maybe query only in the recommend state
-            new_recommendations = query_information(
-                new_recommendations, updated_information
-            )
-
             # Only if we have a transition we can make, use this next state
             if dialog_act in state.next_state_map:
                 next_state = state.next_state_map[dialog_act]
@@ -258,4 +263,4 @@ def transition(
 if __name__ == "__main__":
     # Activate first state
 
-    transition(welcome, verbose=True)
+    transition(welcome)
