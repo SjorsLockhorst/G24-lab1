@@ -17,7 +17,7 @@ def match_sentence(sentence, keywords):
                         f"Didn't recognize {word}, did you mean {keyword}? (yes/no) \n"
                     )
                     if response == "yes":
-                        matched = keyword
+                        return keyword
     return matched
 
 
@@ -31,6 +31,23 @@ def _match_sentence(sentence, keywords):
         return result.group(1)
 
     # TODO: Match don't care, any, whatever no preference, then return "ANY".
+
+
+def match_request(sentence, information):
+    information.reset_requests()
+    if match_sentence(sentence, ["pricerange"]):
+        information.pricerange_requested = True
+    if match_sentence(sentence, ["food"]):
+        information.food_requested = True
+    if match_sentence(sentence, ["area"]):
+        information.area_requested = True
+    if match_sentence(sentence, ["address"]):
+        information.address_requested = True
+    if match_sentence(sentence, ["postcode"]):
+        information.postcode_requested = True
+    if match_sentence(sentence, ["phone"]):
+        information.phone_requested = True
+    return information
 
 
 def match_pricerange(sentence):

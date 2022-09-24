@@ -4,7 +4,7 @@ from typing import Optional
 from machine_learning import load_model
 from extract import create_restaurant_dataset
 from dataclasses import dataclass
-from templates import match_area, match_food, match_pricerange
+from templates import match_area, match_food, match_pricerange, match_request
 
 import numpy as np
 import pandas as pd
@@ -97,20 +97,30 @@ class AskAreaState(StateInterface):
 
 class RecommendPlaceState(StateInterface):
     def activate(self, information, recommendations):
-        recommendation = recommendations.sample()
-        new_recommendations = recommendations.rename(
-            index={recommendation.index[0]: len(data)}
-        )
+        try:
+            new_recommendations = recommendations.drop(index=len(data))
+        except KeyError:
+            new_recommendations = recommendations
 
-        message = f"{recommendation['restaurantname'].values[0]} is a nice place"
-        if information.pricerange:
-            message += f" that is {information.pricerange} in price"
-        if information.area:
-            message += f" in the {information.area} of town"
-        if information.food:
-            message += f" that serves {information.food} food"
-        message += ".\n"
-        return input(message), information, new_recommendations
+        if len(new_recommendations) > 0:
+
+            recommendation = new_recommendations.sample()
+            new_recommendations = new_recommendations.rename(
+                index={recommendation.index[0]: len(data)}
+            )
+
+            message = f"{recommendation['restaurantname'].values[0]} is a nice place"
+            if information.pricerange:
+                message += f" that is {information.pricerange} in price"
+            if information.area:
+                message += f" in the {information.area} of town"
+            if information.food:
+                message += f" that serves {information.food} food"
+            message += ".\n"
+            sentence = input(message)
+            new_information = match_request(sentence, information)
+            return sentence, new_information, new_recommendations
+        return "", information, new_recommendations
 
 
 class NotFoundState(StateInterface):
@@ -126,36 +136,37 @@ class NotFoundState(StateInterface):
         message += "\nPlease try again.\n"
         sentence = input(message)
         information.update(get_information(sentence))
-
         return sentence, information, data
-
-
-class RequestAlternativesState(StateInterface):
-    def activate(self, information, recommendations):
-        new_recommendations = recommendations.drop(index=len(data))
-        if len(new_recommendations) > 0:
-            recommendation = new_recommendations.sample()
-
-            new_recommendations = new_recommendations.rename(
-                index={recommendation.index.values[0]: len(data)}
-            )
-
-            message = f"{recommendation['restaurantname'].values[0]} is a nice place"
-            if information.pricerange:
-                message += f" that is {information.pricerange} in price"
-            if information.area:
-                message += f" in the {information.area} of town"
-            if information.food:
-                message += f" that serves {information.food} food"
-            message += ".\n"
-            return input(message), information, new_recommendations
-        return "", information, new_recommendations
 
 
 class RequestInformation(StateInterface):
     def activate(self, information, recommendations):
-        # recommendation = recommendations.iloc[len(data)]
-        return "", information, recommendations
+        recommendation = recommendations.loc[len(data)]
+        columns = information.get_requested_columns()
+        col_to_str = {
+            "addr": "address",
+            "phone": "phone number",
+            "food": "food",
+            "postcode": "postcode",
+            "pricerange": "price range",
+            "area": "area",
+        }
+        if columns:
+            message = f"Restaurant {recommendation['restaurantname']} "
+            i = 0
+            while i < len(columns):
+                column = columns[i]
+                message += f"has {col_to_str[column]}: {recommendation[column]}"
+                if i + 1 < len(columns):
+                    message += " and "
+                i += 1
+            message += ".\n"
+        else:
+            message = "I did not understand your request, please try again.\n"
+
+        sentence = input(message)
+        information = match_request(sentence, information)
+        return sentence, information, recommendations
 
 
 def query(data, expected):
@@ -181,6 +192,21 @@ class Information:
     area: Optional[str]
     food: Optional[str]
 
+    postcode_requested: bool = False
+    address_requested: bool = False
+    phone_requested: bool = False
+    pricerange_requested: bool = False
+    area_requested: bool = False
+    food_requested: bool = False
+
+    def reset_requests(self):
+        self.postcode_requested = False
+        self.address_requested = False
+        self.phone_requested = False
+        self.pricerange_requested = False
+        self.area_requested = False
+        self.food_requested = False
+
     def update(self, other):
         if other.pricerange:
             self.pricerange = other.pricerange
@@ -188,6 +214,22 @@ class Information:
             self.area = other.area
         if other.food:
             self.food = other.food
+
+    def get_requested_columns(self):
+        columns = []
+        if self.postcode_requested:
+            columns.append("postcode")
+        if self.address_requested:
+            columns.append("addr")
+        if self.phone_requested:
+            columns.append("phone")
+        if self.pricerange_requested:
+            columns.append("pricerange")
+        if self.area_requested:
+            columns.append("area")
+        if self.food_requested:
+            columns.append("food")
+        return columns
 
     @property
     def complete(self):
@@ -200,14 +242,19 @@ def get_information(sentence):
     )
 
 
-bye = ByeState(4, None, end=True)
+bye = ByeState(8, None, end=True)
 
-reqalts = RequestAlternativesState(6, {})
-recommend = RecommendPlaceState(5, {"reqalts": reqalts})
-ask_area = AskAreaState(4, {"inform": recommend})
-type_food = AskTypeState(3, {"inform": ask_area})
-price_range = AskPriceRangeState(2, {"inform": type_food})
-not_found = NotFoundState(6, {"inform": price_range})
+extra_info = RequestInformation(7, None)
+recommend = RecommendPlaceState(6, {"bye": bye, "request": extra_info, "thankyou": bye})
+
+not_found = NotFoundState(5, None)
+type_food = AskTypeState(4, {"inform": recommend})
+ask_area = AskAreaState(3, {"inform": type_food})
+price_range = AskPriceRangeState(2, {"inform": ask_area})
+
+not_found.next_state = {"inform": price_range}
+recommend.next_state["reqalts"] = recommend
+extra_info.next_state = recommend.next_state
 
 welcome = WelcomeState(1, price_range)
 
@@ -261,11 +308,8 @@ def transition(
             model=model,
             verbose=verbose,
         )
-    else:
-        return
 
 
 if __name__ == "__main__":
     # Activate first state
-
-    transition(welcome)
+    transition(welcome, verbose=True)
