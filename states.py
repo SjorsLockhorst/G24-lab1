@@ -111,11 +111,11 @@ class RecommendPlaceState(StateInterface):
 
             message = f"{recommendation['restaurantname'].values[0]} is a nice place"
             if information.pricerange:
-                message += f" that is {information.pricerange} in price"
+                message += f" that is {recommendation['pricerange'].values[0]} in price"
             if information.area:
-                message += f" in the {information.area} of town"
+                message += f" in the {recommendation['area'].values[0]} of town"
             if information.food:
-                message += f" that serves {information.food} food"
+                message += f" that serves {recommendation['food'].values[0]} food"
             message += ".\n"
             sentence = input(message)
             new_information = match_request(sentence, information)
@@ -170,12 +170,14 @@ class RequestInformation(StateInterface):
 
 
 def query(data, expected):
+    SKIP = {"all", "any"}
     col, value = expected
-    return data[data[col] == value]
+    if value not in SKIP:
+        return data[data[col] == value]
+    return data
 
 
 def query_information(data, information):
-    # TODO: Query to take into account when user expresses no preference.
     data = data.copy()
     if information.pricerange:
         data = query(data, ("pricerange", information.pricerange))

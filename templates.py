@@ -7,6 +7,7 @@ If so, assigns that slot. If no type is recognized, should ask the user again.""
 
 
 def match_sentence(sentence, keywords):
+    keywords += ["any", "all"]
     matched = _match_sentence(sentence, keywords)
     if not matched:
         words = sentence.split(" ")
