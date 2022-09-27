@@ -3,7 +3,7 @@ import math
 from typing import Optional
 
 from machine_learning import load_model
-from extract import create_restaurant_dataset
+from extract import read_restaurant_dataset
 from dataclasses import dataclass
 from templates import match_area, match_food, match_pricerange, match_request
 
@@ -12,7 +12,7 @@ import pandas as pd
 
 log_reg = load_model("log_reg.pickle")
 
-data = create_restaurant_dataset()
+data = read_restaurant_dataset()
 
 
 class StateInterface(metaclass=abc.ABCMeta):

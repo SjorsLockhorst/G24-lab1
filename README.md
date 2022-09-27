@@ -33,6 +33,9 @@ We wrote the [extract.py](extract.py) module as a helper to load in data from th
 Additionally, we wrote a bag-of-words vectorizer. This was done to gather understanding on how this works, but in the end, the implementation of sklearn was used.
 We kept our original in this repository for reference in the file [vectorize.py](vectorize.py).
 
+For the inference part, we need to randomly generate additional columns to the restaurant dataset at random. We did this and saved the csv file, but kept our randomization script.
+You could randomize new columns by running [extract.py](extract.py) directly.
+
 ### State machine
 
 Run [state.py](state.py) to test our dialog management system.

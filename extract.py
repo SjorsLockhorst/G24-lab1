@@ -2,6 +2,7 @@
 import os
 
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 
 DATA_DIR = "data/"  # Data directory
@@ -38,5 +39,27 @@ def create_dialog_dataset(test_size=0.15):
     return train_test_split(all_x, all_y, test_size=test_size, random_state=42)
 
 
-def create_restaurant_dataset():
+def read_restaurant_dataset():
     return pd.read_csv(os.path.join(DATA_DIR, "restaurant_info.csv"))
+
+
+def create_augmented_restaurant_dataset():
+
+    FOOD_QUALITY = ["bad", "good", "moderate"]
+    CROWDEDNESS = ["quiet", "busy", "moderate"]
+    STAY_LENGTH = ["short", "long", "moderate"]
+    data = read_restaurant_dataset()
+    data["food quality"] = np.random.choice(FOOD_QUALITY, size=len(data))
+    data["crowdedness"] = np.random.choice(CROWDEDNESS, size=len(data))
+    data["length of stay"] = np.random.choice(STAY_LENGTH, size=len(data))
+    return data
+
+
+def read_augmented_restaurant_dataset():
+    return pd.read_csv(os.path.join(DATA_DIR, "restaurant_info_aug.csv"))
+
+
+if __name__ == "__main__":
+    create_augmented_restaurant_dataset().to_csv(
+        os.path.join(DATA_DIR, "restaurant_info_aug.csv")
+    )
