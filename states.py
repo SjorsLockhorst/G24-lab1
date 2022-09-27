@@ -1,4 +1,5 @@
 import abc
+import math
 from typing import Optional
 
 from machine_learning import load_model
@@ -156,7 +157,12 @@ class RequestInformation(StateInterface):
             i = 0
             while i < len(columns):
                 column = columns[i]
-                message += f"has {col_to_str[column]}: {recommendation[column]}"
+                value = recommendation[column]
+                if isinstance(value, float):
+                    if math.isnan(value):
+                        message += f"has no {col_to_str[column]}"
+                else:
+                    message += f"has {col_to_str[column]}: {value}"
                 if i + 1 < len(columns):
                     message += " and "
                 i += 1
