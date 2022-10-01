@@ -6,10 +6,6 @@ Checks whether it contains any information that can be used to fill slots.
 If so, assigns that slot. If no type is recognized, should ask the user again."""
 
 
-def match_sentence_keywords(sentence, keywords):
-    return match_by_keywords(sentence, keywords)
-
-
 def match_by_keywords(sentence, keywords):
     # This is not the best, since it matches any word,
     # word that is in our query could have another semantic meaning to the user
@@ -24,17 +20,17 @@ def match_by_keywords(sentence, keywords):
 
 def match_request(sentence, information):
     information.reset_requests()
-    if match_sentence_keywords(sentence, ["pricerange"]):
+    if match_by_keywords(sentence, ["pricerange"]):
         information.pricerange_requested = True
-    if match_sentence_keywords(sentence, ["food"]):
+    if match_by_keywords(sentence, ["food"]):
         information.food_requested = True
-    if match_sentence_keywords(sentence, ["area"]):
+    if match_by_keywords(sentence, ["area"]):
         information.area_requested = True
-    if match_sentence_keywords(sentence, ["address"]):
+    if match_by_keywords(sentence, ["address"]):
         information.address_requested = True
-    if match_sentence_keywords(sentence, ["postcode"]):
+    if match_by_keywords(sentence, ["postcode"]):
         information.postcode_requested = True
-    if match_sentence_keywords(sentence, ["phone"]):
+    if match_by_keywords(sentence, ["phone"]):
         information.phone_requested = True
     return information
 
@@ -45,7 +41,7 @@ def match_pricerange(sentence):
     KNOWN_RANGES = {"cheap", "expensive", "moderate"}
     match = match_sentence(sentence, PATTERN, KNOWN_RANGES, group=1)
     if not match:
-        return match_sentence_keywords(sentence, KNOWN_RANGES)
+        return match_by_keywords(sentence, KNOWN_RANGES)
     return match
 
 
@@ -58,7 +54,7 @@ def match_area(sentence):
     if not first_match:
         second_match = match_sentence(sentence, SECOND_PATT, KNOWN_AREAS, group=2)
         if not second_match:
-            return match_sentence_keywords(sentence, KNOWN_AREAS)
+            return match_by_keywords(sentence, KNOWN_AREAS)
         return second_match
     return first_match
 
@@ -107,7 +103,7 @@ def match_food(sentence):
     PATTERN = r"\b(\w+)\sfood|cuisine|kitchen|restaurant|place\b"
     match = match_sentence(sentence, PATTERN, KNOWN_FOODS)
     if not match:
-        return match_sentence_keywords(sentence, KNOWN_FOODS)
+        return match_by_keywords(sentence, KNOWN_FOODS)
     return match
 
 
@@ -133,3 +129,8 @@ def match_sentence(sentence, pattern, known_words, group=0):
             )
             if response == "yes":
                 return correction
+
+
+def match_consequent(sentence):
+    KEYWORDS = ["touristic", "assigned seats", "children", "romantic"]
+    return match_by_keywords(sentence, KEYWORDS)

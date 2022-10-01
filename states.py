@@ -5,7 +5,7 @@ from typing import Optional
 from scipy.sparse.extract import find
 
 from machine_learning import load_model
-from extract import read_restaurant_dataset
+from extract import read_augmented_restaurant_dataset
 from dataclasses import dataclass
 from templates import (
     match_area,
@@ -13,6 +13,7 @@ from templates import (
     match_pricerange,
     match_request,
     match_food,
+    match_consequent,
 )
 
 import numpy as np
@@ -20,7 +21,7 @@ import pandas as pd
 
 log_reg = load_model("log_reg.pickle")
 
-data = read_restaurant_dataset()
+data = read_augmented_restaurant_dataset()
 
 
 class StateInterface(metaclass=abc.ABCMeta):
@@ -39,6 +40,90 @@ class StateInterface(metaclass=abc.ABCMeta):
 
     def __repr__(self):
         return f"{self.__class__.__name__}(number={self.number}, end={self.end})"
+
+
+@dataclass
+class Inference:
+    consequent: str
+    truth_value: bool
+    verb: str
+    because: str
+
+    pricerange: Optional[str] = None
+    food_quality: Optional[str] = None
+    length_of_stay: Optional[str] = None
+    crowdedness: Optional[str] = None
+
+    def infer_from_data(self, data):
+        inferences = data.copy()
+        if self.pricerange:
+            inferences = data[data["pricerange"] == self.pricerange]
+        if self.food_quality:
+            inferences = data[data["food quality"] == self.food_quality]
+        if self.length_of_stay:
+            inferences = data[data["length of stay"] == self.length_of_stay]
+        if self.crowdedness:
+            inferences = data[data["crowdedness"] == self.crowdedness]
+
+        return inferences
+
+    @property
+    def consequent_sent(self):
+        return f"{self.verb} {self.consequent}"
+
+    def __str__(self):
+        return f"The restaurant {self.consequent_sent} because {self.because}.\n"
+
+
+@dataclass
+class Information:
+    pricerange: Optional[str]
+    area: Optional[str]
+    food: Optional[str]
+
+    postcode_requested: bool = False
+    address_requested: bool = False
+    phone_requested: bool = False
+    pricerange_requested: bool = False
+    area_requested: bool = False
+    food_requested: bool = False
+    inference: Optional[Inference] = None
+
+    def reset_requests(self):
+        self.postcode_requested = False
+        self.address_requested = False
+        self.phone_requested = False
+        self.pricerange_requested = False
+        self.area_requested = False
+        self.food_requested = False
+
+    def update(self, other):
+        if other.pricerange:
+            self.pricerange = other.pricerange
+        if other.area:
+            self.area = other.area
+        if other.food:
+            self.food = other.food
+
+    def get_requested_columns(self):
+        columns = []
+        if self.postcode_requested:
+            columns.append("postcode")
+        if self.address_requested:
+            columns.append("addr")
+        if self.phone_requested:
+            columns.append("phone")
+        if self.pricerange_requested:
+            columns.append("pricerange")
+        if self.area_requested:
+            columns.append("area")
+        if self.food_requested:
+            columns.append("food")
+        return columns
+
+    @property
+    def complete(self):
+        return self.pricerange and self.area and self.food
 
 
 class WelcomeState(StateInterface):
@@ -78,6 +163,7 @@ class AskPriceRangeState(StateInterface):
                 information.pricerange = match_pricerange(sentence)
 
         new_recommendations = query_information(data, information)
+        information.inference = None
 
         return sentence, information, new_recommendations
 
@@ -126,6 +212,8 @@ class RecommendPlaceState(StateInterface):
             if information.food:
                 message += f" that serves {recommendation['food'].values[0]} food"
             message += ".\n"
+            if information.inference:
+                message += str(information.inference)
             sentence = input(message)
             new_information = match_request(sentence, information)
             return sentence, new_information, new_recommendations
@@ -141,7 +229,9 @@ class NotFoundState(StateInterface):
         if information.area:
             message += f" in the {information.area} of town"
         if information.food:
-            message += f" that serves {information.food} food."
+            message += f" that serves {information.food} food"
+        if information.inference:
+            message += f" that {information.inference.consequent_sent}."
         message += "\nPlease try again.\n"
         sentence = input(message)
         information.update(get_information(sentence))
@@ -183,6 +273,28 @@ class RequestInformation(StateInterface):
         return sentence, information, recommendations
 
 
+class RequestAdditionalInformation(StateInterface):
+    def activate(self, information, recommendations):
+        # User input
+        INFERENCE_MAP = {
+            "touristic": Inference(
+                "touristic",
+                True,
+                "is",
+                "it serves cheap, good food",
+                pricerange="cheap",
+                food_quality="good",
+            )
+        }
+        sentence = input("Do you have any additional requirements? \n")
+        consequent = match_consequent(sentence)
+        if consequent is not None and consequent in INFERENCE_MAP:
+            inference = INFERENCE_MAP[consequent]
+            recommendations = inference.infer_from_data(recommendations)
+            information.inference = inference
+        return sentence, information, recommendations
+
+
 def query(data, expected):
     SKIP = {"all", "any"}
     col, value = expected
@@ -202,54 +314,10 @@ def query_information(data, information):
     return data
 
 
-@dataclass
-class Information:
-    pricerange: Optional[str]
-    area: Optional[str]
-    food: Optional[str]
-
-    postcode_requested: bool = False
-    address_requested: bool = False
-    phone_requested: bool = False
-    pricerange_requested: bool = False
-    area_requested: bool = False
-    food_requested: bool = False
-
-    def reset_requests(self):
-        self.postcode_requested = False
-        self.address_requested = False
-        self.phone_requested = False
-        self.pricerange_requested = False
-        self.area_requested = False
-        self.food_requested = False
-
-    def update(self, other):
-        if other.pricerange:
-            self.pricerange = other.pricerange
-        if other.area:
-            self.area = other.area
-        if other.food:
-            self.food = other.food
-
-    def get_requested_columns(self):
-        columns = []
-        if self.postcode_requested:
-            columns.append("postcode")
-        if self.address_requested:
-            columns.append("addr")
-        if self.phone_requested:
-            columns.append("phone")
-        if self.pricerange_requested:
-            columns.append("pricerange")
-        if self.area_requested:
-            columns.append("area")
-        if self.food_requested:
-            columns.append("food")
-        return columns
-
-    @property
-    def complete(self):
-        return self.pricerange and self.area and self.food
+def infer(data, inferences):
+    for inference in inferences:
+        data = inference.infer_from_data(data)
+    return data
 
 
 def get_information(sentence):
@@ -262,9 +330,10 @@ bye = ByeState(8, None, end=True)
 
 extra_info = RequestInformation(7, None)
 recommend = RecommendPlaceState(6, {"bye": bye, "request": extra_info, "thankyou": bye})
+additional_info = RequestAdditionalInformation(8, recommend)
 
 not_found = NotFoundState(5, None)
-type_food = AskTypeState(4, {"inform": recommend})
+type_food = AskTypeState(4, {"inform": additional_info})
 ask_area = AskAreaState(3, {"inform": type_food})
 price_range = AskPriceRangeState(2, {"inform": ask_area})
 
