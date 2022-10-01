@@ -1,5 +1,6 @@
 import abc
 import math
+from operator import truth
 from typing import Optional
 
 from scipy.sparse.extract import find
@@ -52,20 +53,23 @@ class Inference:
     pricerange: Optional[str] = None
     food_quality: Optional[str] = None
     length_of_stay: Optional[str] = None
+    food_type: Optional[str] = None
     crowdedness: Optional[str] = None
 
-    def infer_from_data(self, data):
-        inferences = data.copy()
+    def infer_from_data(self, recommendations):
+        new_rec = recommendations.copy()
         if self.pricerange:
-            inferences = data[data["pricerange"] == self.pricerange]
+            new_rec = new_rec[new_rec["pricerange"] == self.pricerange]
+        if self.food_type:
+            new_rec = new_rec[new_rec["food"] == self.food_type]
         if self.food_quality:
-            inferences = data[data["food quality"] == self.food_quality]
+            new_rec = new_rec[new_rec["food quality"] == self.food_quality]
         if self.length_of_stay:
-            inferences = data[data["length of stay"] == self.length_of_stay]
+            new_rec = new_rec[new_rec["length of stay"] == self.length_of_stay]
         if self.crowdedness:
-            inferences = data[data["crowdedness"] == self.crowdedness]
+            new_rec = new_rec[new_rec["crowdedness"] == self.crowdedness]
 
-        return inferences
+        return new_rec
 
     @property
     def consequent_sent(self):
@@ -73,6 +77,64 @@ class Inference:
 
     def __str__(self):
         return f"The restaurant {self.consequent_sent} because {self.because}.\n"
+
+
+class Inferences:
+    def __init__(self, consequent, if_true=None, if_false=None):
+        self.consequent = consequent
+        self.if_true = if_true
+        self.if_false = if_false
+        self.truth_value = None
+        if not if_true and not if_false:
+            raise ValueError("Must have at least one inference")
+
+    def infer(self, recommendations, truth_value):
+        new_rec = recommendations.copy()
+        self.truth_value = truth_value
+        if truth_value:
+            if self.if_true is not None and self.if_false is not None:
+                new_rec = self.if_true.infer_from_data(new_rec)
+                to_remove = self.if_false.infer_from_data(new_rec)
+                new_rec = new_rec.drop(index=to_remove.index)
+            elif self.if_true is not None and self.if_false is None:
+                new_rec = self.if_true.infer_from_data(new_rec)
+            elif self.if_true is None and self.if_false is not None:
+                new_rec = pd.DataFrame()
+
+        else:
+            if self.if_false is not None and self.if_true is not None:
+                new_rec = self.if_false.infer_from_data(new_rec)
+                to_remove = self.if_true.infer_from_data(new_rec)
+                new_rec = new_rec.drop(index=to_remove.index)
+            elif self.if_false is not None and self.if_false is None:
+                new_rec = self.if_false.infer_from_data(new_rec)
+            elif self.if_false is None and self.if_true is not None:
+                new_rec = pd.DataFrame()
+
+        return new_rec
+
+    @property
+    def chosen_inference(self):
+        if self.truth_value is None:
+            return None
+        if self.truth_value:
+            return self.if_true
+        else:
+            return self.if_false
+
+    @property
+    def consequent_sent(self):
+        # TODO: Make this a bit less ugly, add actual formatted text
+        if self.chosen_inference is None:
+            return f"has value {self.truth_value} for {self.consequent}"
+        return self.chosen_inference.consequent_sent
+
+    @property
+    def message(self):
+        if self.chosen_inference is not None:
+            return str(self.chosen_inference)
+        else:
+            return f"has value {self.truth_value} for {self.consequent}"
 
 
 @dataclass
@@ -87,7 +149,7 @@ class Information:
     pricerange_requested: bool = False
     area_requested: bool = False
     food_requested: bool = False
-    inference: Optional[Inference] = None
+    inferences: Optional[Inferences] = None
 
     def reset_requests(self):
         self.postcode_requested = False
@@ -163,7 +225,7 @@ class AskPriceRangeState(StateInterface):
                 information.pricerange = match_pricerange(sentence)
 
         new_recommendations = query_information(data, information)
-        information.inference = None
+        information.inferences = None
 
         return sentence, information, new_recommendations
 
@@ -212,8 +274,8 @@ class RecommendPlaceState(StateInterface):
             if information.food:
                 message += f" that serves {recommendation['food'].values[0]} food"
             message += ".\n"
-            if information.inference:
-                message += str(information.inference)
+            if information.inferences:
+                message += information.inferences.message
             sentence = input(message)
             new_information = match_request(sentence, information)
             return sentence, new_information, new_recommendations
@@ -230,8 +292,8 @@ class NotFoundState(StateInterface):
             message += f" in the {information.area} of town"
         if information.food:
             message += f" that serves {information.food} food"
-        if information.inference:
-            message += f" that {information.inference.consequent_sent}."
+        if information.inferences:
+            message += f" that {information.inferences.consequent_sent}."
         message += "\nPlease try again.\n"
         sentence = input(message)
         information.update(get_information(sentence))
@@ -277,21 +339,69 @@ class RequestAdditionalInformation(StateInterface):
     def activate(self, information, recommendations):
         # User input
         INFERENCE_MAP = {
-            "touristic": Inference(
+            "touristic": Inferences(
                 "touristic",
-                True,
-                "is",
-                "it serves cheap, good food",
-                pricerange="cheap",
-                food_quality="good",
-            )
+                Inference(
+                    "touristic",
+                    True,
+                    "is",
+                    "it serves cheap, good food",
+                    pricerange="cheap",
+                    food_quality="good",
+                ),
+                Inference(
+                    "touristic",
+                    False,
+                    "is not",
+                    "it serves Romanian food",
+                    food_type="romanian",
+                ),
+            ),
+            "assigned seats": Inferences(
+                "assigned seats",
+                Inference(
+                    "assigned seats",
+                    True,
+                    "has",
+                    "the waiter decides where you sit",
+                    crowdedness="busy",
+                ),
+            ),
+            "children": Inferences(
+                "children",
+                None,
+                Inference(
+                    "children",
+                    False,
+                    "is not recommended for",
+                    "spending a long time is not advised when taking children",
+                    length_of_stay="long",
+                ),
+            ),
+            "romantic": Inferences(
+                "romantic",
+                Inference(
+                    "romantic",
+                    True,
+                    "is",
+                    "spending a long time in a restaurant is romantic",
+                    length_of_stay="long",
+                ),
+                Inference(
+                    "romantic",
+                    False,
+                    "is not",
+                    "a busy restaurant is not romantic",
+                    crowdedness="busy",
+                ),
+            ),
         }
         sentence = input("Do you have any additional requirements? \n")
-        consequent = match_consequent(sentence)
+        consequent, truth_value = match_consequent(sentence)
         if consequent is not None and consequent in INFERENCE_MAP:
-            inference = INFERENCE_MAP[consequent]
-            recommendations = inference.infer_from_data(recommendations)
-            information.inference = inference
+            inferences = INFERENCE_MAP[consequent]
+            recommendations = inferences.infer(recommendations, truth_value)
+            information.inferences = inferences
         return sentence, information, recommendations
 
 
@@ -397,4 +507,4 @@ def transition(
 
 if __name__ == "__main__":
     # Activate first state
-    transition(welcome, verbose=True)
+    transition(welcome)

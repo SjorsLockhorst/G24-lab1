@@ -133,4 +133,6 @@ def match_sentence(sentence, pattern, known_words, group=0):
 
 def match_consequent(sentence):
     KEYWORDS = ["touristic", "assigned seats", "children", "romantic"]
-    return match_by_keywords(sentence, KEYWORDS)
+    NEGATIVE_KEYWORDS = ["not", "no"]
+    match = match_by_keywords(sentence, KEYWORDS)
+    return match, match_by_keywords(sentence, NEGATIVE_KEYWORDS) is None
