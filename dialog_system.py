@@ -23,17 +23,22 @@ data = read_augmented_restaurant_dataset()
 
 
 class StateInterface(metaclass=abc.ABCMeta):
+    """Interface that dictates any state must have a activate function."""
+
     def __init__(self, number, next_state, end=False):
+        """Universal init method for all state instance."""
         self.number = number
         self.end = end
         self.next_state = next_state
 
     @classmethod
     def __subclasshook__(cls, subclass):
+        """Classes that have a callable activate property be a valid StateInterface."""
         return hasattr(subclass, "activate") and callable(subclass.activate)
 
     @abc.abstractmethod
     def activate(self, information, recommendations):
+        """Abstract method that subclasses must implement."""
         raise NotImplementedError
 
     def __repr__(self):
