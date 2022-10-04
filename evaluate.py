@@ -1,7 +1,9 @@
 """Script that allows user to select a model and test it's accuracy on the test set."""
 from extract import create_dialog_dataset
 from machine_learning import select_model, load_model
+
 from sklearn.metrics import precision_recall_fscore_support
+from prettytable import PrettyTable
 
 if __name__ == "__main__":
     name, filepath, _ = select_model()
@@ -25,10 +27,13 @@ if __name__ == "__main__":
                 print(f"{class_}: {metric}")
         print()
 
-    print_metric(prec, "Precision")
-    print_metric(recall, "Recall")
-    print_metric(fscore, "F-score")
-    print_metric(n_occurences, "N per category", percentage=False)
+    table = PrettyTable(["Label", "Precision", "Recall", "F-score", "N occurences"])
+    table.add_rows(
+        [row for row in zip(model.classes_, prec, recall, fscore, n_occurences)]
+    )
+
+    print("Results:")
+    print(table.get_string())
 
     prec, recall, fscore, n_occurences = precision_recall_fscore_support(
         y_test, res, zero_division=1, average="macro"
