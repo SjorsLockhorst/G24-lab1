@@ -42,16 +42,22 @@ class StateInterface(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     def __repr__(self):
+        """Representation for this class, for debugging"""
         return f"{self.__class__.__name__}(number={self.number}, end={self.end})"
 
 
 @dataclass
 class Inference:
+    """An inference that we want to make on our restaurant data."""
+
     consequent: str
     truth_value: bool
+
+    # Variables to format strings to user correctly
     verb: str
     because: str
 
+    # Possible antecedent values
     pricerange: Optional[str] = None
     food_quality: Optional[str] = None
     length_of_stay: Optional[str] = None
@@ -59,6 +65,7 @@ class Inference:
     crowdedness: Optional[str] = None
 
     def infer_from_data(self, recommendations):
+        """Infer from the data which recommendations meet our antecedent."""
         new_rec = recommendations.copy()
         if self.pricerange:
             new_rec = new_rec[new_rec["pricerange"] == self.pricerange]
@@ -75,54 +82,93 @@ class Inference:
 
     @property
     def consequent_sent(self):
+        """Get the sentence that involves the consequent."""
         return f"{self.verb} {self.consequent}"
 
     def __str__(self):
+        """
+        Format this inference based on the consequent sent and the because properties
+        """
         return f"The restaurant {self.consequent_sent} because {self.because}.\n"
 
 
 class Inferences:
-    def __init__(self, consequent, if_true=None, if_false=None):
+    """
+    A collection of at least one and at most two inferences.
+
+    One can define a inference when true, and inference when false.
+
+    Raises a ValueError when both inferences are None.
+    """
+
+    def __init__(self, consequent, true_inference=None, false_inference=None):
         self.consequent = consequent
-        self.if_true = if_true
-        self.if_false = if_false
+        self.true_inference = true_inference
+        self.false_inference = false_inference
         self.truth_value = None
-        if not if_true and not if_false:
+        if not true_inference and not false_inference:
             raise ValueError("Must have at least one inference")
 
     def infer(self, recommendations, truth_value):
+        """Infer from the data the correct inference, based on the truth value"""
+        # Copy the current recommendations
         new_rec = recommendations.copy()
+
+        # Set the truth value of this inference
         self.truth_value = truth_value
+
+        # If the truth_value == True
         if truth_value:
-            if self.if_true is not None and self.if_false is not None:
-                new_rec = self.if_true.infer_from_data(new_rec)
-                to_remove = self.if_false.infer_from_data(new_rec)
+
+            # If we have both an inference for True and False values
+            if self.true_inference is not None and self.false_inference is not None:
+
+                # Infer which restaurants in the data have value True
+                new_rec = self.true_inference.infer_from_data(new_rec)
+
+                # Infer which restaurants in the data have value False
+                to_remove = self.false_inference.infer_from_data(new_rec)
+
+                # Drop the resturants where the inference is False
+                # because we want only restaurants that are True
                 new_rec = new_rec.drop(index=to_remove.index)
-            elif self.if_true is not None and self.if_false is None:
-                new_rec = self.if_true.infer_from_data(new_rec)
-            elif self.if_true is None and self.if_false is not None:
+
+            # If we have only the true inference
+            elif self.true_inference is not None and self.false_inference is None:
+
+                # See for which
+                new_rec = self.true_inference.infer_from_data(new_rec)
+
+            # If we have only a False inference, but the truth value is True,
+            # we can't resolve the request (we don't know what it means for our
+            # inference to be True) hence, we return no results
+            elif self.true_inference is None and self.false_inference is not None:
                 new_rec = pd.DataFrame()
 
+        # Same comments as before apply, but now inversely, where True is now False
         else:
-            if self.if_false is not None and self.if_true is not None:
-                new_rec = self.if_false.infer_from_data(new_rec)
-                to_remove = self.if_true.infer_from_data(new_rec)
+            if self.false_inference is not None and self.true_inference is not None:
+                new_rec = self.false_inference.infer_from_data(new_rec)
+                to_remove = self.true_inference.infer_from_data(new_rec)
                 new_rec = new_rec.drop(index=to_remove.index)
-            elif self.if_false is not None and self.if_false is None:
-                new_rec = self.if_false.infer_from_data(new_rec)
-            elif self.if_false is None and self.if_true is not None:
+            elif self.false_inference is not None and self.false_inference is None:
+                new_rec = self.false_inference.infer_from_data(new_rec)
+            elif self.false_inference is None and self.true_inference is not None:
                 new_rec = pd.DataFrame()
 
+        # Finally, return recommendations for which the resturants match the inference
+        # with the correct truth value.
         return new_rec
 
     @property
     def chosen_inference(self):
+        """The inference that was chosen, based on the truth value that was set."""
         if self.truth_value is None:
             return None
         if self.truth_value:
-            return self.if_true
+            return self.true_inference
         else:
-            return self.if_false
+            return self.false_inference
 
     @property
     def consequent_sent(self):
