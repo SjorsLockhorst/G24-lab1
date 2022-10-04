@@ -14,19 +14,10 @@ if __name__ == "__main__":
     model = load_model(filepath)
 
     # Create dataset
-    _, x_test, y_train, y_test = create_dialog_dataset()
+    x_train, x_test, y_train, y_test = create_dialog_dataset()
 
     # Predict values based on test data
     pred = model.predict(x_test)
-
-    # Create table and data to show label distribution
-    training_tabel = PrettyTable(["Label", "N occurences"])
-    values, unique = np.unique(y_train, return_counts=True)
-    rows = np.column_stack((values, unique))
-    training_tabel.add_rows(rows)
-
-    print("Training data label distribution")
-    print(training_tabel.get_string())
 
     def format_percentage(number):
         """Format a number as a percentage"""
@@ -47,7 +38,7 @@ if __name__ == "__main__":
     print(table.get_string())
 
     prec, recall, fscore, n_occurences = precision_recall_fscore_support(
-        y_test, pred, zero_division=1, average="macro"
+        y_test, pred, zero_division=1, average="weighted"
     )
 
     print("On average:")
