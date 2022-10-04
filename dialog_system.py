@@ -139,6 +139,57 @@ class Inferences:
             return f"has value {self.truth_value} for {self.consequent}"
 
 
+@dataclass
+class Information:
+    pricerange: Optional[str]
+    area: Optional[str]
+    food: Optional[str]
+
+    postcode_requested: bool = False
+    address_requested: bool = False
+    phone_requested: bool = False
+    pricerange_requested: bool = False
+    area_requested: bool = False
+    food_requested: bool = False
+    inferences: Optional[Inferences] = None
+
+    def reset_requests(self):
+        self.postcode_requested = False
+        self.address_requested = False
+        self.phone_requested = False
+        self.pricerange_requested = False
+        self.area_requested = False
+        self.food_requested = False
+
+    def update(self, other):
+        if other.pricerange:
+            self.pricerange = other.pricerange
+        if other.area:
+            self.area = other.area
+        if other.food:
+            self.food = other.food
+
+    def get_requested_columns(self):
+        columns = []
+        if self.postcode_requested:
+            columns.append("postcode")
+        if self.address_requested:
+            columns.append("addr")
+        if self.phone_requested:
+            columns.append("phone")
+        if self.pricerange_requested:
+            columns.append("pricerange")
+        if self.area_requested:
+            columns.append("area")
+        if self.food_requested:
+            columns.append("food")
+        return columns
+
+    @property
+    def complete(self):
+        return self.pricerange and self.area and self.food
+
+
 class WelcomeState(StateInterface):
     def activate(self, information, recommendations):
         sentence = input(
