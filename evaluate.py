@@ -1,9 +1,17 @@
 """Script that allows user to select a model and test it's accuracy on the test set."""
+import os
+
 from extract import create_dialog_dataset
 from machine_learning import select_model, load_model
 
 import numpy as np
-from sklearn.metrics import precision_recall_fscore_support, accuracy_score
+import matplotlib.pyplot as plt
+from sklearn.metrics import (
+    precision_recall_fscore_support,
+    accuracy_score,
+    confusion_matrix,
+    ConfusionMatrixDisplay,
+)
 from prettytable import PrettyTable
 
 if __name__ == "__main__":
@@ -37,6 +45,19 @@ if __name__ == "__main__":
     print(f"{name} results:")
     print(table.get_string())
 
+    fig = plt.figure(figsize=(10, 10))
+    ax = fig.add_subplot()
+    fig.set_dpi(100)
+
+    disp = ConfusionMatrixDisplay.from_predictions(
+        y_test,
+        pred,
+        labels=model.classes_,
+        cmap="gray",
+        xticks_rotation="vertical",
+        ax=ax,
+    )
+
     prec, recall, fscore, n_occurences = precision_recall_fscore_support(
         y_test, pred, zero_division=1, average="weighted"
     )
@@ -47,5 +68,11 @@ if __name__ == "__main__":
     print(f"Recall: {format_percentage(recall)}")
     print(f"F-score: {format_percentage(fscore)}")
 
-    # print(f"Prediction of {name}:")
-    # print(f"Correct: {res * 100:.2f}%")
+    PLOT_DIR = "plots"
+    path = os.path.join(PLOT_DIR, f"{name}_confusion_matrix.png")
+    fig.savefig(
+        path,
+        bbox_inches="tight",
+        dpi=300,
+    )
+    print(f"Saved confusion matrix to {path}.")
