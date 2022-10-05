@@ -5,7 +5,9 @@ from extract import create_dialog_dataset
 from machine_learning import select_model, load_model
 
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
+
 from sklearn.metrics import (
     precision_recall_fscore_support,
     accuracy_score,
@@ -16,8 +18,8 @@ from prettytable import PrettyTable
 
 if __name__ == "__main__":
     # Prompt user to select model
-    name, filepath, _ = select_model()
-    print(f"Loading {name} model from disk...")
+    model_name, filepath, _ = select_model()
+    print(f"Loading {model_name} model from disk...")
 
     model = load_model(filepath)
 
@@ -42,7 +44,7 @@ if __name__ == "__main__":
         [row for row in zip(model.classes_, prec, recall, fscore, n_occurences)]
     )
 
-    print(f"{name} results:")
+    print(f"{model_name} results:")
     print(table.get_string())
 
     fig = plt.figure(figsize=(10, 10))
@@ -69,10 +71,26 @@ if __name__ == "__main__":
     print(f"F-score: {format_percentage(fscore)}")
 
     PLOT_DIR = "plots"
-    path = os.path.join(PLOT_DIR, f"{name}_confusion_matrix.png")
+    plot_path = os.path.join(PLOT_DIR, f"{model_name}_confusion_matrix.png")
     fig.savefig(
-        path,
+        plot_path,
         bbox_inches="tight",
         dpi=300,
     )
-    print(f"Saved confusion matrix to {path}.")
+    print(f"Saved confusion matrix to {plot_path}.")
+
+    # Create csv file with results, to use for analysis
+    df = pd.DataFrame()
+    all_x = np.concatenate([x_train, x_test])
+    all_y = np.concatenate([y_train, y_test])
+    all_pred = model.predict(all_x)
+    df["sentence"] = all_x
+    df["correct label"] = all_y
+    df["predicted label"] = all_pred
+    df["is correct"] = all_y == all_pred
+    df["is train"] = df.index < len(x_train)
+
+    RESULTS_DIR = "results"
+    results_path = os.path.join(RESULTS_DIR, f"{model_name}_results.csv")
+    df.to_csv(results_path)
+    print(f"Saved confusion matrix to {results_path}.")

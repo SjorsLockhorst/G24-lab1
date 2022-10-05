@@ -3,6 +3,8 @@ import os
 from extract import create_dialog_dataset
 
 import numpy as np
+import pandas as pd
+
 import matplotlib.pyplot as plt
 from prettytable import PrettyTable
 from sklearn.feature_extraction.text import CountVectorizer
