@@ -20,7 +20,7 @@ def read_dialog_data():
     with open(filepath, "r") as file:  # Open file
         lines = file.readlines()
         for line in lines:
-            stripped = line.strip()
+            stripped = line.lower().strip()
             split = stripped.split(" ")
             dialog_act = split[0]
             sentence = " ".join(split[1:])
