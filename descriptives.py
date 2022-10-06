@@ -10,15 +10,20 @@ from prettytable import PrettyTable
 from sklearn.feature_extraction.text import CountVectorizer
 
 if __name__ == "__main__":
+    # Load data
     x_train, x_test, y_train, y_test = create_dialog_dataset()
+
+    # Add back together entire dataset
     all_x = np.concatenate([x_train, x_test])
     all_y = np.concatenate([y_train, y_test])
 
+    # Get word lengths
     len_vect = np.vectorize(len)
     words = [sent.split() for sent in all_x]
     lengths = len_vect(np.array(words, dtype="object"))
     sorted_lens = np.sort(lengths)
 
+    # Create histogram that shows word length
     utt_fig, utt_ax = plt.subplots()
     utt_ax.hist(sorted_lens, bins=np.linspace(1, lengths.max()))
     utt_ax.set_title("Histrogram sentence utterence length.")
@@ -32,6 +37,7 @@ if __name__ == "__main__":
     rows = np.column_stack((values, n_occ))
     training_tabel.add_rows(rows)
 
+    # Init count vectorizer to compare in and out of vocabulary words
     vectorizer = CountVectorizer()
     vectorizer.fit(x_train)
     voc = vectorizer.vocabulary_
@@ -39,13 +45,15 @@ if __name__ == "__main__":
     test_vectorizer = CountVectorizer()
     test_vectorizer.fit(x_test)
     test_voc = test_vectorizer.vocabulary_
-
     n_out_of_voc = len(voc.keys() - test_voc.keys())
-    print(f"Out of vocabulary words in test set: {n_out_of_voc}")
 
+    # Print out all results
+    print(f"Out of vocabulary words in test set: {n_out_of_voc}")
     print(f"Amount of unique labels: {len(values)}")
     print("Training data label distribution")
     print(training_tabel.get_string())
+
+    # Write out plot to png file
     PLOT_DIR = "plots"
     path = os.path.join(PLOT_DIR, "utterence_length_hist.png")
     utt_fig.savefig(path, dpi=300, bbox_inches="tight")

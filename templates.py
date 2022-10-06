@@ -1,24 +1,21 @@
+"""Templates to extract information from user inputs."""
+
 import re
 from Levenshtein import distance
 
-"""Funtions that takes a user's turn (type string) as input after the relevant question.
-Checks whether it contains any information that can be used to fill slots.
-If so, assigns that slot. If no type is recognized, should ask the user again."""
-
 
 def match_by_keywords(sentence, keywords):
-    # This is not the best, since it matches any word,
-    # word that is in our query could have another semantic meaning to the user
+    """Match keywords in a sentence."""
+    # TODO: Match don't care, any, whatever no preference, then return "ANY".
     sentence = sentence.lower().strip()
     keyword_regex = f"({'|'.join(keywords)})"
     result = re.search(keyword_regex, sentence)
     if result:
         return result.group(1)
 
-    # TODO: Match don't care, any, whatever no preference, then return "ANY".
-
 
 def match_request(sentence, information):
+    """Match which request a user has typed in a sentence."""
     information.reset_requests()
     if match_by_keywords(sentence, ["pricerange"]):
         information.pricerange_requested = True
@@ -36,6 +33,7 @@ def match_request(sentence, information):
 
 
 def match_pricerange(sentence):
+    """Matches the template for pricerange against a user input."""
     sentence = sentence.lower().strip()
     PATTERN = r"\b(\w+)\s(priced|pricing|price)\b"
     KNOWN_RANGES = {"cheap", "expensive", "moderate"}
@@ -46,6 +44,7 @@ def match_pricerange(sentence):
 
 
 def match_area(sentence):
+    """Matches the template for area against a user input."""
     sentence = sentence.lower().strip()
     KNOWN_AREAS = {"west", "north", "south", "centre", "east"}
     FIRST_PATT = r"\b(\w+)\spart\b"
@@ -60,6 +59,7 @@ def match_area(sentence):
 
 
 def match_food(sentence):
+    """Matches the template for food against a user input."""
     sentence = sentence.lower().strip()
     KNOWN_FOODS = {
         "british",
@@ -108,6 +108,7 @@ def match_food(sentence):
 
 
 def is_close_to_any(word, known_words, minimum_dist=3):
+    """From a list of words, find those words who are close to some known words."""
     return [
         known_word
         for known_word in known_words
@@ -116,6 +117,7 @@ def is_close_to_any(word, known_words, minimum_dist=3):
 
 
 def match_sentence(sentence, pattern, known_words, group=0):
+    """Match a pattern and known words against a user input."""
     match = re.search(pattern, sentence)
     if match:
         matched_word = match.group(group)
@@ -132,6 +134,7 @@ def match_sentence(sentence, pattern, known_words, group=0):
 
 
 def match_consequent(sentence):
+    """Match which consequent a user inputs."""
     KEYWORDS = ["touristic", "assigned seats", "children", "romantic"]
     NEGATIVE_KEYWORDS = ["not", "no"]
     match = match_by_keywords(sentence, KEYWORDS)

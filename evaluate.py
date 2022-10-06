@@ -1,4 +1,4 @@
-"""Script that allows user to select a model and test it's accuracy on the test set."""
+"""Script that allows user to select a model and test it's on some stats."""
 import os
 
 from extract import create_dialog_dataset
@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import (
     precision_recall_fscore_support,
     accuracy_score,
-    confusion_matrix,
     ConfusionMatrixDisplay,
 )
 from prettytable import PrettyTable
@@ -44,9 +43,11 @@ if __name__ == "__main__":
         [row for row in zip(model.classes_, prec, recall, fscore, n_occurences)]
     )
 
+    # Print result sin a table
     print(f"{model_name} results:")
     print(table.get_string())
 
+    # Init confusion matrix
     fig = plt.figure(figsize=(10, 10))
     ax = fig.add_subplot()
     fig.set_dpi(100)
@@ -60,16 +61,19 @@ if __name__ == "__main__":
         ax=ax,
     )
 
+    # Retrieve average stats for entire set, weighted by n occurences
     prec, recall, fscore, n_occurences = precision_recall_fscore_support(
         y_test, pred, zero_division=1, average="weighted"
     )
 
+    # Print out stats
     print("On average:")
     print(f"Accuracy: {format_percentage(accuracy_score(y_test, pred))}")
     print(f"Precision: {format_percentage(prec)}")
     print(f"Recall: {format_percentage(recall)}")
     print(f"F-score: {format_percentage(fscore)}")
 
+    # Write out confusion matrix to png file
     PLOT_DIR = "plots"
     plot_path = os.path.join(PLOT_DIR, f"{model_name}_confusion_matrix.png")
     fig.savefig(

@@ -1,3 +1,4 @@
+"""Script that trains a selected machine learning model."""
 import pickle
 import os
 

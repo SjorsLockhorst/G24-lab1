@@ -1,3 +1,8 @@
+"""
+A dialog system, that prompts user for restaurant specifications, and ultimates
+attempts to suggest a restaurant that matches these specifications.
+"""
+
 import abc
 import math
 from typing import Optional
@@ -187,6 +192,8 @@ class Inferences:
 
 @dataclass
 class Information:
+    """Models the information that a user can give us via inputted sentences"""
+
     pricerange: Optional[str]
     area: Optional[str]
     food: Optional[str]
@@ -200,6 +207,7 @@ class Information:
     inferences: Optional[Inferences] = None
 
     def reset_requests(self):
+        """Reset all requests."""
         self.postcode_requested = False
         self.address_requested = False
         self.phone_requested = False
@@ -208,6 +216,7 @@ class Information:
         self.food_requested = False
 
     def update(self, other):
+        """Update information with another information object."""
         if other.pricerange:
             self.pricerange = other.pricerange
         if other.area:
@@ -216,6 +225,7 @@ class Information:
             self.food = other.food
 
     def get_requested_columns(self):
+        """Get columns from restaurant data that matches current information."""
         columns = []
         if self.postcode_requested:
             columns.append("postcode")
@@ -231,12 +241,10 @@ class Information:
             columns.append("food")
         return columns
 
-    @property
-    def complete(self):
-        return self.pricerange and self.area and self.food
-
 
 class WelcomeState(StateInterface):
+    """The state that welcomes the user, and asks for the first user input."""
+
     def activate(self, information, recommendations):
         sentence = input(
             "Hello , welcome to the Cambridge restaurant system? You can ask for "
@@ -250,6 +258,7 @@ class WelcomeState(StateInterface):
         return sentence, new_information, new_recommendations
 
 
+# TODO: Remove this?
 class ThankYouState(StateInterface):
     def activate(self, information, recomendations):
         print("You're welcome!\n")
@@ -257,21 +266,30 @@ class ThankYouState(StateInterface):
 
 
 class ByeState(StateInterface):
+    """The state that says goodbye to the user."""
+
     def activate(self, information, recommendations):
         print("Good bye\n")
         return "", information, recommendations
 
 
 class AskPriceRangeState(StateInterface):
+    """The state that asks the user for a price range preference"""
+
     def activate(self, information, recommendations):
         sentence = ""
+        # Only ask for pricerange, if we don't have one unique pricerange yet
+        # in our recommendations
         if len(recommendations["pricerange"].unique()) > 1:
+            # Loop while we don't know the users preference for pricerange
             while not information.pricerange:
                 sentence = input(
                     "Would you like something in the cheap, moderate or expensive price range?\n"
                 )
+                # Store the new value that was matched from the user input in information
                 information.pricerange = match_pricerange(sentence)
 
+        # Query recommendations based on new information
         new_recommendations = query_information(data, information)
         information.inferences = None
 
@@ -279,8 +297,11 @@ class AskPriceRangeState(StateInterface):
 
 
 class AskTypeState(StateInterface):
+    """State that asks the user for the type of food they would like."""
+
     def activate(self, information, recommendations):
         sentence = ""
+        # Only ask for food type, if we don't have a unique food yet in recommendation
         if len(recommendations["food"].unique()) > 1:
             while not information.food:
                 sentence = input("What kind of food would you like?\n")
@@ -290,6 +311,8 @@ class AskTypeState(StateInterface):
 
 
 class AskAreaState(StateInterface):
+    """State that asks the user for the area of town they would prefer."""
+
     def activate(self, information, recommendations):
         sentence = ""
         if len(recommendations["area"].unique()) > 1:
@@ -301,6 +324,8 @@ class AskAreaState(StateInterface):
 
 
 class RecommendPlaceState(StateInterface):
+    """State that picks a restaurant recommendation for the user"""
+
     def activate(self, information, recommendations):
         try:
             new_recommendations = recommendations.drop(index=len(data))
@@ -331,6 +356,11 @@ class RecommendPlaceState(StateInterface):
 
 
 class NotFoundState(StateInterface):
+    """
+    State that let's the user know there are no recommendations that meet
+    their requirements.
+    """
+
     def activate(self, information, recommendations):
         sentence = ""
         message = "There is no (other) restaurant "

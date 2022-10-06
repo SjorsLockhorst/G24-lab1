@@ -40,15 +40,26 @@ def create_dialog_dataset(test_size=0.15):
 
 
 def read_restaurant_dataset():
+    """Read in restaurant dataset."""
     return pd.read_csv(os.path.join(DATA_DIR, "restaurant_info.csv"))
 
 
 def create_augmented_restaurant_dataset():
+    """
+    Create augmented dataset.
 
+    Adds food quality, crowdedness, length of stay, and random values for it.
+    """
+
+    # Values for each respective column
     FOOD_QUALITY = ["bad", "good", "moderate"]
     CROWDEDNESS = ["quiet", "busy", "moderate"]
     STAY_LENGTH = ["short", "long", "moderate"]
+
+    # Read in default dataset
     data = read_restaurant_dataset()
+
+    # Add columns with random values from options
     data["food quality"] = np.random.choice(FOOD_QUALITY, size=len(data))
     data["crowdedness"] = np.random.choice(CROWDEDNESS, size=len(data))
     data["length of stay"] = np.random.choice(STAY_LENGTH, size=len(data))
@@ -56,10 +67,14 @@ def create_augmented_restaurant_dataset():
 
 
 def read_augmented_restaurant_dataset():
+    """
+    Read the restaurant information, with added columns containing random values.
+    """
     return pd.read_csv(os.path.join(DATA_DIR, "restaurant_info_aug.csv"))
 
 
 if __name__ == "__main__":
+    # When this file is ran as script, create new randomly generated augmented data
     create_augmented_restaurant_dataset().to_csv(
         os.path.join(DATA_DIR, "restaurant_info_aug.csv")
     )
