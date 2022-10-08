@@ -115,7 +115,9 @@ class Inferences:
             raise ValueError("Must have at least one inference")
 
     def infer(self, recommendations, truth_value):
-        """Infer from the data the correct inference, based on the truth value"""
+        """
+        Infer from the data the correct inference, based on the truth value
+        """
         # Copy the current recommendations
         new_rec = recommendations.copy()
 
@@ -255,7 +257,7 @@ class WelcomeState(StateInterface):
 
         new_recommendations = query_information(data, new_information)
 
-        return sentence, new_information, new_recommendations
+        return sentence.lower(), new_information, new_recommendations
 
 
 class ByeState(StateInterface):
@@ -286,7 +288,7 @@ class AskPriceRangeState(StateInterface):
         new_recommendations = query_information(data, information)
         information.inferences = None
 
-        return sentence, information, new_recommendations
+        return sentence.lower(), information, new_recommendations
 
 
 class AskTypeState(StateInterface):
@@ -300,7 +302,7 @@ class AskTypeState(StateInterface):
                 sentence = input("What kind of food would you like?\n")
                 information.food = match_food(sentence)
         new_recommendations = query_information(data, information)
-        return sentence, information, new_recommendations
+        return sentence.lower(), information, new_recommendations
 
 
 class AskAreaState(StateInterface):
@@ -313,7 +315,7 @@ class AskAreaState(StateInterface):
                 sentence = input("What kind of area would you like?\n")
                 information.area = match_area(sentence)
         new_recommendations = query_information(data, information)
-        return sentence, information, new_recommendations
+        return sentence.lower(), information, new_recommendations
 
 
 class RecommendPlaceState(StateInterface):
@@ -344,8 +346,8 @@ class RecommendPlaceState(StateInterface):
                 message += information.inferences.message
             sentence = input(message)
             new_information = match_request(sentence, information)
-            return sentence, new_information, new_recommendations
-        return "", information, new_recommendations
+            return sentence.lower(), new_information, new_recommendations
+        return "NOT_FOUND", information, new_recommendations
 
 
 class NotFoundState(StateInterface):
@@ -368,7 +370,7 @@ class NotFoundState(StateInterface):
         message += "\nPlease try again.\n"
         sentence = input(message)
         information.update(get_information(sentence))
-        return sentence, information, data
+        return sentence.lower(), information, data
 
 
 class RequestInformation(StateInterface):
@@ -412,7 +414,7 @@ class RequestInformation(StateInterface):
 
         sentence = input(message)
         information = match_request(sentence, information)
-        return sentence, information, recommendations
+        return sentence.lower(), information, recommendations
 
 
 class AskAdditionalRequirements(StateInterface):
@@ -482,13 +484,15 @@ class AskAdditionalRequirements(StateInterface):
                 ),
             ),
         }
+        if len(recommendations) == 0:
+            return "NOT_FOUND", information, recommendations
         sentence = input("Do you have any additional requirements? \n")
         consequent, truth_value = match_consequent(sentence)
         if consequent is not None and consequent in INFERENCE_MAP:
             inferences = INFERENCE_MAP[consequent]
             recommendations = inferences.infer(recommendations, truth_value)
             information.inferences = inferences
-        return sentence, information, recommendations
+        return sentence.lower(), information, recommendations
 
 
 def query(data, expected):
@@ -515,7 +519,9 @@ def query_information(data, information):
 def get_information(sentence):
     """Update information based on a user input."""
     return Information(
-        match_pricerange(sentence), match_area(sentence), match_food(sentence)
+        match_pricerange(sentence, False),
+        match_area(sentence, False),
+        match_food(sentence, False),
     )
 
 
@@ -531,6 +537,7 @@ ask_area = AskAreaState(3, {"inform": type_food})
 price_range = AskPriceRangeState(2, {"inform": ask_area})
 
 not_found.next_state = {"inform": price_range}
+recommend.next_state["NOT_FOUND"] = not_found
 recommend.next_state["reqalts"] = recommend
 extra_info.next_state = recommend.next_state
 
@@ -558,12 +565,9 @@ def transition(
     sentence, updated_information, new_recommendations = state.activate(
         information, recommendations
     )
-
     if not state.end:
 
-        # Query data and update recommendations, based on new information
-        if len(new_recommendations) > 0:
-
+        if sentence != "NOT_FOUND":
             # Only if we have a transition we can make, use this next state
             if isinstance(state.next_state, dict):
 
@@ -579,8 +583,6 @@ def transition(
                     next_state = state
             else:
                 next_state = state.next_state
-
-        # If we don't have recommendations, go to the not found state
         else:
             next_state = not_found
 
