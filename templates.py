@@ -3,11 +3,13 @@
 import re
 from Levenshtein import distance
 
+UNIVERSALS = {"all", "any"}
+
 
 def match_by_keywords(sentence, keywords, use_levenshtein=False):
     """Match keywords in a sentence."""
-    # TODO: Match don't care, any, whatever no preference, then return "ANY".
     sentence = sentence.lower().strip()
+    keywords = set(keywords) | UNIVERSALS
     keyword_regex = f"({'|'.join(keywords)})"
     result = re.search(keyword_regex, sentence)
     if result:
@@ -26,17 +28,17 @@ def match_by_keywords(sentence, keywords, use_levenshtein=False):
 def match_request(sentence, information):
     """Match which request a user has typed in a sentence."""
     information.reset_requests()
-    if match_by_keywords(sentence, ["pricerange"]):
+    if match_by_keywords(sentence, {"pricerange"}):
         information.pricerange_requested = True
-    if match_by_keywords(sentence, ["food"]):
+    if match_by_keywords(sentence, {"food"}):
         information.food_requested = True
-    if match_by_keywords(sentence, ["area"]):
+    if match_by_keywords(sentence, {"area"}):
         information.area_requested = True
-    if match_by_keywords(sentence, ["address"]):
+    if match_by_keywords(sentence, {"address"}):
         information.address_requested = True
-    if match_by_keywords(sentence, ["postcode"]):
+    if match_by_keywords(sentence, {"postcode"}):
         information.postcode_requested = True
-    if match_by_keywords(sentence, ["phone"]):
+    if match_by_keywords(sentence, {"phone"}):
         information.phone_requested = True
     return information
 
@@ -138,7 +140,7 @@ def match_template(sentence, pattern, known_words, group=0):
         matched_word = match.group(group)
         if matched_word in known_words:
             return matched_word
-        if matched_word in {"all", "any"}:
+        if matched_word in UNIVERSALS:
             return matched_word
 
         corrections = is_close_to_any(matched_word, known_words)
@@ -152,7 +154,7 @@ def match_template(sentence, pattern, known_words, group=0):
 
 def match_consequent(sentence):
     """Match which consequent a user inputs."""
-    KEYWORDS = ["touristic", "assigned seats", "children", "romantic"]
-    NEGATIVE_KEYWORDS = ["not", "no"]
+    KEYWORDS = {"touristic", "assigned seats", "children", "romantic"}
+    NEGATIVE_KEYWORDS = {"not", "no"}
     match = match_by_keywords(sentence, KEYWORDS)
     return match, match_by_keywords(sentence, NEGATIVE_KEYWORDS) is None
