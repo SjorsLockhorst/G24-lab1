@@ -1,8 +1,9 @@
+"""Own implementation of bag-of-words vectorization."""
 from collections import Counter
 
 import numpy as np
 
-from extract import read_data
+from extract import read_dialog_data
 
 
 def vectorize(sentence, vocabulary):
@@ -22,7 +23,6 @@ def vectorize(sentence, vocabulary):
 
 def vectorize_all(sentences, vocabulary):
     """Vectorize some amount of sentences based on vocabulary."""
-    # TODO: Make sparse matrix
     matrix = np.zeros((len(sentences), len(vocabulary)))
 
     for sent_id, sent in enumerate(sentences):

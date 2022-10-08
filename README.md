@@ -32,3 +32,10 @@ To run the interactive CLI environment where you can type sentences, and the sys
 We wrote the [extract.py](extract.py) module as a helper to load in data from the raw data file(s) in [data/](data/).
 Additionally, we wrote a bag-of-words vectorizer. This was done to gather understanding on how this works, but in the end, the implementation of sklearn was used.
 We kept our original in this repository for reference in the file [vectorize.py](vectorize.py).
+
+For the inference part, we need to randomly generate additional columns to the restaurant dataset at random. We did this and saved the csv file, but kept our randomization script.
+You could randomize new columns by running [extract.py](extract.py) directly.
+
+### Dialog system
+
+Run [dialog_system.py](dialog_system.py) to test our dialog system.

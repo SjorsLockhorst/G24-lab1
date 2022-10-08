@@ -1,13 +1,16 @@
 """Module to extract and load data."""
 import os
 
+import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 
+DATA_DIR = "data/"  # Data directory
 
-def read_data():
+
+def read_dialog_data():
     """Reads data from a path and returns the proper data structure."""
 
-    DATA_DIR = "data/"  # Data director
     filepath = os.path.join(
         DATA_DIR, "dialog_acts.dat"
     )  # join filename and path to obtain full system path
@@ -17,7 +20,7 @@ def read_data():
     with open(filepath, "r") as file:  # Open file
         lines = file.readlines()
         for line in lines:
-            stripped = line.strip()
+            stripped = line.lower().strip()
             split = stripped.split(" ")
             dialog_act = split[0]
             sentence = " ".join(split[1:])
@@ -30,7 +33,48 @@ def read_data():
     return sentences, dialog_acts
 
 
-def create_dataset(test_size=0.15):
+def create_dialog_dataset(test_size=0.15):
     """Creates dataset by reading and splitting dataset."""
-    all_x, all_y = read_data()
+    all_x, all_y = read_dialog_data()
     return train_test_split(all_x, all_y, test_size=test_size, random_state=42)
+
+
+def read_restaurant_dataset():
+    """Read in restaurant dataset."""
+    return pd.read_csv(os.path.join(DATA_DIR, "restaurant_info.csv"))
+
+
+def create_augmented_restaurant_dataset():
+    """
+    Create augmented dataset.
+
+    Adds food quality, crowdedness, length of stay, and random values for it.
+    """
+
+    # Values for each respective column
+    FOOD_QUALITY = ["bad", "good", "moderate"]
+    CROWDEDNESS = ["quiet", "busy", "moderate"]
+    STAY_LENGTH = ["short", "long", "moderate"]
+
+    # Read in default dataset
+    data = read_restaurant_dataset()
+
+    # Add columns with random values from options
+    data["food quality"] = np.random.choice(FOOD_QUALITY, size=len(data))
+    data["crowdedness"] = np.random.choice(CROWDEDNESS, size=len(data))
+    data["length of stay"] = np.random.choice(STAY_LENGTH, size=len(data))
+    return data
+
+
+def read_augmented_restaurant_dataset():
+    """
+    Read the restaurant information, with added columns containing random values.
+    """
+    return pd.read_csv(os.path.join(DATA_DIR, "restaurant_info_aug.csv"))
+
+
+if __name__ == "__main__":
+    # When this file is ran as script, create new randomly generated augmented data
+    create_augmented_restaurant_dataset().to_csv(
+        os.path.join(DATA_DIR, "restaurant_info_aug.csv")
+    )

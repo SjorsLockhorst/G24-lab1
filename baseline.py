@@ -4,7 +4,7 @@ import re
 
 import numpy as np
 
-from extract import read_data
+from extract import read_dialog_data
 
 
 def get_most_frequent(y):
@@ -79,7 +79,7 @@ def evaluate(labels, predictions):
 
 if __name__ == "__main__":
     print("Loading raw data...")
-    xs, ys = read_data()
+    xs, ys = read_dialog_data()
     most_frequent = get_most_frequent(ys)
 
     print("Baseline 1: Assigning most frequent..")

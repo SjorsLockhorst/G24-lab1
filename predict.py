@@ -4,7 +4,7 @@ import sys
 from machine_learning import load_model
 from machine_learning import select_model
 from baseline import get_most_frequent, assign_rule_based
-from extract import create_dataset
+from extract import create_dialog_dataset
 
 
 # TODO: Fix this, function never gets called
@@ -25,7 +25,7 @@ def predict_most_frequent(sentence, y):
 
 if __name__ == "__main__":
     # Obtain training data
-    y_train = create_dataset()[2]
+    y_train = create_dialog_dataset()[2]
     sentence = ""
     selected = sys.maxsize * 2 + 1
 
