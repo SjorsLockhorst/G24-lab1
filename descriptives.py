@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     # Create histogram that shows word length
     utt_fig, utt_ax = plt.subplots()
-    utt_ax.hist(sorted_lens, bins=np.linspace(1, lengths.max()))
+    utt_ax.hist(sorted_lens, bins=np.arange(0.5, lengths.max(), 1), rwidth=0.5)
     utt_ax.set_title("Histrogram sentence utterence length.")
     utt_ax.set_xlabel("Utterance length in amount of words")
     utt_ax.set_ylabel("Frequency in the data")
