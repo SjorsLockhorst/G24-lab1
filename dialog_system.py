@@ -26,6 +26,8 @@ log_reg = load_model("log_reg.pickle")
 
 data = read_augmented_restaurant_dataset()
 
+NOT_FOUND = "NOT_FOUND"
+
 
 class StateInterface(metaclass=abc.ABCMeta):
     """Interface that dictates any state must have a activate function."""
@@ -347,7 +349,7 @@ class RecommendPlaceState(StateInterface):
             sentence = input(message)
             new_information = match_request(sentence, information)
             return sentence.lower(), new_information, new_recommendations
-        return "NOT_FOUND", information, new_recommendations
+        return NOT_FOUND, information, new_recommendations
 
 
 class NotFoundState(StateInterface):
@@ -485,7 +487,7 @@ class AskAdditionalRequirements(StateInterface):
             ),
         }
         if len(recommendations) == 0:
-            return "NOT_FOUND", information, recommendations
+            return NOT_FOUND, information, recommendations
         sentence = input("Do you have any additional requirements? \n")
         consequent, truth_value = match_consequent(sentence)
         if consequent is not None and consequent in INFERENCE_MAP:
@@ -526,10 +528,10 @@ def get_information(sentence):
 
 
 # Collection of states, connected together as shown in the diagram
-bye = ByeState(8, None, end=True)
-extra_info = RequestInformation(7, None)
-recommend = RecommendPlaceState(6, {"bye": bye, "request": extra_info, "thankyou": bye})
-additional_info = AskAdditionalRequirements(8, recommend)
+bye = ByeState(9, None, end=True)
+extra_info = RequestInformation(8, None)
+recommend = RecommendPlaceState(7, {"bye": bye, "request": extra_info, "thankyou": bye})
+additional_info = AskAdditionalRequirements(6, recommend)
 
 not_found = NotFoundState(5, None)
 type_food = AskTypeState(4, {"inform": additional_info})
@@ -565,14 +567,15 @@ def transition(
     sentence, updated_information, new_recommendations = state.activate(
         information, recommendations
     )
+    dialog_act = model.predict([sentence.lower()])[0]
+
     if not state.end:
 
-        if sentence != "NOT_FOUND":
+        if sentence != NOT_FOUND:
             # Only if we have a transition we can make, use this next state
             if isinstance(state.next_state, dict):
 
                 # Get dialog act to find out to which state to transition
-                dialog_act = model.predict([sentence.lower()])[0]
 
                 if dialog_act in state.next_state:
                     next_state = state.next_state[dialog_act]
@@ -607,4 +610,4 @@ def transition(
 
 if __name__ == "__main__":
     # Activate first state
-    transition(welcome)
+    transition(welcome, verbose=True)
