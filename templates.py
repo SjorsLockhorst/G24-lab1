@@ -10,7 +10,7 @@ def match_by_keywords(sentence, keywords, use_levenshtein=False):
     """Match keywords in a sentence."""
     sentence = sentence.lower().strip()
     keywords = set(keywords) | UNIVERSALS
-    keyword_regex = f"({'|'.join(keywords)})"
+    keyword_regex = rf"\b({'|'.join(keywords)})\b"
     result = re.search(keyword_regex, sentence)
     if result:
         return result.group(1)
