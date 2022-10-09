@@ -610,4 +610,5 @@ def transition(
 
 if __name__ == "__main__":
     # Activate first state
-    transition(welcome, verbose=True)
+    VERBOSE = False
+    transition(welcome, verbose=VERBOSE)
