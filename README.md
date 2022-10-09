@@ -2,7 +2,7 @@
 
 ## Installation
 
-To install run, create a new virtual environment (using python venv or Conda), activate it and run:
+To install, create a new virtual environment (using python venv or Conda), activate it and run:
 
 ```
 pip install -r requirements.txt
@@ -20,7 +20,7 @@ To evaluate the baseline results, run [baseline.py](baseline.py).
 
 We have implemented various Machine Learning classifiers for this assignment.
 You can find the code that trains them in [train.py](train.py).
-For convenience, we have pretrained them and store them in [models/](models/) as pickled files.
+For convenience, we have pretrained them and stored them in [models/](models/) as pickle files.
 All other parts of the code that load the models, load these pickle files directly.
 To run the interactive CLI environment where you can type sentences, and the system predicts the dialog act based on a selected model, run [predict.py](predict.py).
 
