@@ -2,7 +2,7 @@
 
 ## Installation
 
-To install run:
+To install run, create a new virtual environment (using python venv or Conda), activate it and run:
 
 ```
 pip install -r requirements.txt
@@ -22,16 +22,12 @@ We have implemented various Machine Learning classifiers for this assignment.
 You can find the code that trains them in [train.py](train.py).
 For convenience, we have pretrained them and store them in [models/](models/) as pickled files.
 All other parts of the code that load the models, load these pickle files directly.
-
-To evaluate the different machine learning algorithms implemented, run [evaluate.py](evaluate.py).
-
 To run the interactive CLI environment where you can type sentences, and the system predicts the dialog act based on a selected model, run [predict.py](predict.py).
 
 ### Additional
 
 We wrote the [extract.py](extract.py) module as a helper to load in data from the raw data file(s) in [data/](data/).
 Additionally, we wrote a bag-of-words vectorizer. This was done to gather understanding on how this works, but in the end, the implementation of sklearn was used.
-We kept our original in this repository for reference in the file [vectorize.py](vectorize.py).
 
 For the inference part, we need to randomly generate additional columns to the restaurant dataset at random. We did this and saved the csv file, but kept our randomization script.
 You could randomize new columns by running [extract.py](extract.py) directly.
