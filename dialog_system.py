@@ -6,6 +6,7 @@ attempts to suggest a restaurant that matches these specifications.
 import abc
 import math
 from typing import Optional
+import time
 
 from machine_learning import load_model
 from extract import read_augmented_restaurant_dataset
@@ -210,6 +211,8 @@ class Information:
     food_requested: bool = False
     inferences: Optional[Inferences] = None
 
+    n_levenshtein: int = 0
+
     def reset_requests(self):
         """Reset all requests."""
         self.postcode_requested = False
@@ -284,7 +287,7 @@ class AskPriceRangeState(StateInterface):
                     "Would you like something in the cheap, moderate or expensive price range?\n"
                 )
                 # Store the new value that was matched from the user input in information
-                information.pricerange = match_pricerange(sentence)
+                information.pricerange = match_pricerange(sentence, information)
 
         # Query recommendations based on new information
         new_recommendations = query_information(data, information)
@@ -302,7 +305,7 @@ class AskTypeState(StateInterface):
         if len(recommendations["food"].unique()) > 1:
             while not information.food:
                 sentence = input("What kind of food would you like?\n")
-                information.food = match_food(sentence)
+                information.food = match_food(sentence, information)
         new_recommendations = query_information(data, information)
         return sentence.lower(), information, new_recommendations
 
@@ -315,7 +318,7 @@ class AskAreaState(StateInterface):
         if len(recommendations["area"].unique()) > 1:
             while not information.area:
                 sentence = input("What kind of area would you like?\n")
-                information.area = match_area(sentence)
+                information.area = match_area(sentence, information)
         new_recommendations = query_information(data, information)
         return sentence.lower(), information, new_recommendations
 
@@ -324,6 +327,7 @@ class RecommendPlaceState(StateInterface):
     """State that picks a restaurant recommendation for the user"""
 
     def activate(self, information, recommendations):
+        print(recommendations)
         try:
             new_recommendations = recommendations.drop(index=len(data))
         except KeyError:
@@ -348,6 +352,7 @@ class RecommendPlaceState(StateInterface):
                 message += information.inferences.message
             sentence = input(message)
             new_information = match_request(sentence, information)
+            print(new_recommendations)
             return sentence.lower(), new_information, new_recommendations
         return NOT_FOUND, information, new_recommendations
 
@@ -489,7 +494,7 @@ class AskAdditionalRequirements(StateInterface):
         if len(recommendations) == 0:
             return NOT_FOUND, information, recommendations
         sentence = input("Do you have any additional requirements? \n")
-        consequent, truth_value = match_consequent(sentence)
+        consequent, truth_value = match_consequent(sentence, information)
         if consequent is not None and consequent in INFERENCE_MAP:
             inferences = INFERENCE_MAP[consequent]
             recommendations = inferences.infer(recommendations, truth_value)
@@ -520,11 +525,11 @@ def query_information(data, information):
 
 def get_information(sentence):
     """Update information based on a user input."""
-    return Information(
-        match_pricerange(sentence, False),
-        match_area(sentence, False),
-        match_food(sentence, False),
-    )
+    information = Information(None, None, None)
+    information.pricerange = match_pricerange(sentence, information, False)
+    information.area = match_area(sentence, information, False)
+    information.food = match_food(sentence, information, False)
+    return information
 
 
 # Collection of states, connected together as shown in the diagram
@@ -599,13 +604,25 @@ def transition(
             print(f"Recommended based on information: {new_recommendations}")
 
         # Recursively call this function with updated information
-        transition(
+        return transition(
             next_state,
             information=updated_information,
             recommendations=new_recommendations,
             model=model,
             verbose=verbose,
         )
+    else:
+        if len(data) in recommendations.index:
+            selected = recommendations.loc[len(data)]
+            return selected.original_index, information
+
+
+def start():
+    start = time.time()
+    selected_id, information = transition(welcome)
+    end = time.time()
+    time_in_seconds = end - start
+    return selected_id, time_in_seconds, information.n_levenshtein
 
 
 if __name__ == "__main__":

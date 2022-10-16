@@ -4,7 +4,7 @@ import re
 from Levenshtein import distance
 
 
-def match_by_keywords(sentence, keywords, use_levenshtein=False):
+def match_by_keywords(sentence, keywords, information, use_levenshtein=False):
     """Match keywords in a sentence."""
     # TODO: Match don't care, any, whatever no preference, then return "ANY".
     sentence = sentence.lower().strip()
@@ -20,58 +20,69 @@ def match_by_keywords(sentence, keywords, use_levenshtein=False):
                     f"Didn't recognize {word}, did you mean {correction}? (yes/no) \n"
                 )
                 if response == "yes":
+                    information.n_levenshtein += 1
                     return correction
 
 
 def match_request(sentence, information):
     """Match which request a user has typed in a sentence."""
     information.reset_requests()
-    if match_by_keywords(sentence, ["pricerange"]):
+    if match_by_keywords(sentence, ["pricerange"], information):
         information.pricerange_requested = True
-    if match_by_keywords(sentence, ["food"]):
+    if match_by_keywords(sentence, ["food"], information):
         information.food_requested = True
-    if match_by_keywords(sentence, ["area"]):
+    if match_by_keywords(sentence, ["area"], information):
         information.area_requested = True
-    if match_by_keywords(sentence, ["address"]):
+    if match_by_keywords(sentence, ["address"], information):
         information.address_requested = True
-    if match_by_keywords(sentence, ["postcode"]):
+    if match_by_keywords(sentence, ["postcode"], information):
         information.postcode_requested = True
-    if match_by_keywords(sentence, ["phone"]):
+    if match_by_keywords(sentence, ["phone"], information):
         information.phone_requested = True
     return information
 
 
-def match_pricerange(sentence, use_levenshtein_keywords=True):
+def match_pricerange(sentence, information, use_levenshtein_keywords=True):
     """Matches the template for pricerange against a user input."""
     sentence = sentence.lower().strip()
     PATTERN = r"\b(\w+)\s(priced|pricing|price|pricerange)\b"
     KNOWN_RANGES = {"cheap", "expensive", "moderate"}
-    match = match_template(sentence, PATTERN, KNOWN_RANGES, group=1)
+    match = match_template(sentence, PATTERN, KNOWN_RANGES, information, group=1)
     if not match:
         return match_by_keywords(
-            sentence, KNOWN_RANGES, use_levenshtein=use_levenshtein_keywords
+            sentence,
+            KNOWN_RANGES,
+            information,
+            use_levenshtein=use_levenshtein_keywords,
         )
     return match
 
 
-def match_area(sentence, use_levenshtein_keywords=True):
+def match_area(sentence, information, use_levenshtein_keywords=True):
     """Matches the template for area against a user input."""
     sentence = sentence.lower().strip()
     KNOWN_AREAS = {"west", "north", "south", "centre", "east"}
     FIRST_PATT = r"\b(\w+)\spart\b"
     SECOND_PATT = r"(in the|somewhere)\s(\w+)"
-    first_match = match_template(sentence, FIRST_PATT, KNOWN_AREAS, group=1)
+    first_match = match_template(
+        sentence, FIRST_PATT, KNOWN_AREAS, information, group=1
+    )
     if not first_match:
-        second_match = match_template(sentence, SECOND_PATT, KNOWN_AREAS, group=2)
+        second_match = match_template(
+            sentence, SECOND_PATT, KNOWN_AREAS, information, group=2
+        )
         if not second_match:
             return match_by_keywords(
-                sentence, KNOWN_AREAS, use_levenshtein=use_levenshtein_keywords
+                sentence,
+                KNOWN_AREAS,
+                information,
+                use_levenshtein=use_levenshtein_keywords,
             )
         return second_match
     return first_match
 
 
-def match_food(sentence, use_levenshtein_keywords=True):
+def match_food(sentence, information, use_levenshtein_keywords=True):
     """Matches the template for food against a user input."""
     sentence = sentence.lower().strip()
     KNOWN_FOODS = {
@@ -114,10 +125,10 @@ def match_food(sentence, use_levenshtein_keywords=True):
     }
 
     PATTERN = r"\b(\w+)\sfood|cuisine|kitchen|restaurant|place\b"
-    match = match_template(sentence, PATTERN, KNOWN_FOODS, group=1)
+    match = match_template(sentence, PATTERN, KNOWN_FOODS, information, group=1)
     if not match:
         return match_by_keywords(
-            sentence, KNOWN_FOODS, use_levenshtein=use_levenshtein_keywords
+            sentence, KNOWN_FOODS, information, use_levenshtein=use_levenshtein_keywords
         )
     return match
 
@@ -131,7 +142,7 @@ def is_close_to_any(word, known_words, minimum_dist=3):
     ]
 
 
-def match_template(sentence, pattern, known_words, group=0):
+def match_template(sentence, pattern, known_words, information, group=0):
     """Match a pattern and known words against a user input."""
     match = re.search(pattern, sentence)
     if match:
@@ -147,12 +158,13 @@ def match_template(sentence, pattern, known_words, group=0):
                 f"Didn't recognize {matched_word}, did you mean {correction}? (yes/no) \n"
             )
             if response == "yes":
+                information.n_levenshtein += 1
                 return correction
 
 
-def match_consequent(sentence):
+def match_consequent(sentence, information):
     """Match which consequent a user inputs."""
     KEYWORDS = ["touristic", "assigned seats", "children", "romantic"]
     NEGATIVE_KEYWORDS = ["not", "no"]
-    match = match_by_keywords(sentence, KEYWORDS)
-    return match, match_by_keywords(sentence, NEGATIVE_KEYWORDS) is None
+    match = match_by_keywords(sentence, KEYWORDS, information, True)
+    return match, match_by_keywords(sentence, NEGATIVE_KEYWORDS, information) is None

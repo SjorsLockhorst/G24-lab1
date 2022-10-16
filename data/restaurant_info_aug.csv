@@ -1,4 +1,4 @@
-,restaurantname,pricerange,area,food,phone,addr,postcode,food quality,crowdedness,length of stay
+original_index,restaurantname,pricerange,area,food,phone,addr,postcode,food quality,crowdedness,length of stay
 0,saint johns chop house,moderate,west,british,01223 353110,21 - 24 northampton street,c.b 3,bad,moderate,short
 1,restaurant alimentum,moderate,north,modern european,01223 413000,152 - 154 hills road,c.b 2,bad,quiet,long
 2,pizza hut cherry hinton,moderate,south,italian,01223 323737,g4 cambridge leisure park clifton way cherry hinton,c.b 1,good,moderate,short
