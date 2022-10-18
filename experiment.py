@@ -125,16 +125,8 @@ def setup(clear=True):
 
 
 def start_dialog_system(query_task: QueryTask):
-    # What restaurant did the user pick?
-    # How long did it take?
-    # How many Levenshtein / backspaces etc. (extra metrics)
-    # TODO: implement in dialog system, that it can return the user pick
-    # TODO: inform user they have to type bye, to select their restaurant
     print(query_task.user_prompt)
     setup(clear=False)
-    # What restaurant did the user pick?
-    # TODO: Let user type in restaurant id
-    # How long did it take?
     if query_task.extra_info:
         print(query_task.extra_info)
     print()
@@ -228,8 +220,6 @@ def validate_int(val, lower, upper):
 
 
 def run_experiment(experiments=EXPERIMENTS):
-    # Welcome user to experiment
-    # Explain anything that might be needed to perform experiment
     respid = -1
     which_exp_first = input(
         "Which experiment to run first: [1] dialog system [2] manual search: "
