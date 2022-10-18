@@ -1,3 +1,5 @@
+import os
+import sys
 from dataclasses import dataclass
 from typing import List, Callable, Optional
 from datetime import datetime
@@ -7,11 +9,19 @@ import time
 from rich import print
 from rich.console import Console
 from rich_tools import df_to_table
+import pandas as pd
 
 from dialog_system import start
 from extract import read_augmented_restaurant_dataset
 
 console = Console()
+RESULTS_DIR = "results/experiment"
+
+QUERY_PATH = os.path.join(RESULTS_DIR, "queries.csv")
+RESPID_PATH = os.path.join(RESULTS_DIR, "respondents.csv")
+
+respid_data = pd.read_csv(RESPID_PATH)
+queries_data = pd.read_csv(QUERY_PATH)
 
 
 @dataclass
@@ -26,21 +36,38 @@ class QueryTask:
 @dataclass
 class Experiment:
     name: str
+    user_prompt: str
     query_tasks: List[QueryTask]
     run_experiment: Callable
+    is_dialog_system: bool
 
     def shuffle_tasks(self):
         random.shuffle(self.query_tasks)
 
-    def run(self, shuffle=True):
-        data = []
+    def run(self, respid, shuffle=True):
+        print(self.user_prompt)
+        setup()
         if shuffle:
             self.shuffle_tasks()
-        for task in self.query_tasks:
-            result = self.run_experiment(task)
-            data.append(result)
-            print(result)
-        return data
+        for i, task in enumerate(self.query_tasks, 1):
+            print(f"Task [{i}/{len(self.query_tasks)}]")
+
+            (
+                selected_id,
+                time_in_seconds,
+                n_levenshtein,
+                is_correct,
+            ) = self.run_experiment(task)
+            result = [
+                respid,
+                task.id,
+                self.is_dialog_system,
+                time_in_seconds,
+                selected_id,
+                is_correct,
+                n_levenshtein,
+            ]
+            queries_data.loc[len(queries_data)] = result
 
 
 raw_data = read_augmented_restaurant_dataset()
@@ -89,10 +116,12 @@ dialog_system_query_tasks: List[QueryTask] = [
 ]
 
 
-def setup():
+def setup(clear=True):
     answer = ""
     while answer != "yes":
-        answer = input("Are you ready? (type yes to continue)")
+        answer = input("Are you ready? (type yes to continue): ")
+    if clear:
+        console.clear()
 
 
 def start_dialog_system(query_task: QueryTask):
@@ -101,9 +130,17 @@ def start_dialog_system(query_task: QueryTask):
     # How many Levenshtein / backspaces etc. (extra metrics)
     # TODO: implement in dialog system, that it can return the user pick
     # TODO: inform user they have to type bye, to select their restaurant
-    setup()
+    print(query_task.user_prompt)
+    setup(clear=False)
+    # What restaurant did the user pick?
+    # TODO: Let user type in restaurant id
+    # How long did it take?
+    if query_task.extra_info:
+        print(query_task.extra_info)
+    print()
     selected_id, time_in_seconds, n_levenshtein = start()
     is_correct = selected_id in query_task.correct_rows
+    console.clear()
     return selected_id, time_in_seconds, n_levenshtein, is_correct
 
 
@@ -124,7 +161,6 @@ table = df_to_table(df)
 
 def start_raw_data_search(query_task: QueryTask, table=table):
 
-    console.clear()
     # What restaurant did the user pick?
     # TODO: Let user type in restaurant id
     # How long did it take?
@@ -132,6 +168,7 @@ def start_raw_data_search(query_task: QueryTask, table=table):
     if query_task.extra_info:
         print(query_task.extra_info)
     setup()
+    print()
     print(table)
     print(query_task.user_prompt)
     if query_task.extra_info:
@@ -152,6 +189,7 @@ def start_raw_data_search(query_task: QueryTask, table=table):
                 valid = True
     end = time.time()
     time_in_seconds = end - start
+    console.clear()
     return (
         selected_id_int,
         time_in_seconds,
@@ -161,52 +199,70 @@ def start_raw_data_search(query_task: QueryTask, table=table):
 
 
 dialog_experiment = Experiment(
-    "Dialog system experiment", dialog_system_query_tasks, start_dialog_system
+    "Dialog system experiment",
+    "You will now search for restaurants using the dialog system. Please read the instructions carefully before starting.",
+    dialog_system_query_tasks,
+    start_dialog_system,
+    True,
 )
 raw_data_experiment = Experiment(
-    "Raw data search experiment", raw_query_tasks, start_raw_data_search
+    "Raw data search experiment",
+    "You will now search for restaurants by doing a manual search. Please read the instructions carefully before starting.",
+    raw_query_tasks,
+    start_raw_data_search,
+    False,
 )
 
 EXPERIMENTS = [dialog_experiment, raw_data_experiment]
 
 
+def validate_int(val, lower, upper):
+    try:
+        integer = int(val)
+    except ValueError:
+        return False
+    else:
+        if integer < lower or integer > upper:
+            return False
+    return True
+
+
 def run_experiment(experiments=EXPERIMENTS):
     # Welcome user to experiment
     # Explain anything that might be needed to perform experiment
+    respid = -1
+    which_exp_first = input(
+        "Which experiment to run first: [1] dialog system [2] manual search: "
+    )
+    while not validate_int(which_exp_first, 1, 2):
+        which_exp_first = input("Please pick 1 or 2! ")
+    which_exp_first_int = int(which_exp_first)
+    if which_exp_first_int == 2:
+        experiments.reverse()
+
+    respid_str = input("Please enter respondent id: ")
+    while not validate_int(respid_str, 0, sys.maxsize):
+        respid_str = input("Please enter a valid non negative integer")
+
+    respid = int(respid_str)
+    if respid in respid_data["resp_id"].values:
+        raise Exception(
+            f"Respid {respid} already exists in data, please re run with a unique respid."
+        )
     console.clear()
     print("Welcome to our experiment!\n")
 
-    print("For this experiment, you are hungry, and you want to find a place to eat.")
-    print(
-        "Using different techniques, you will have to find some restaurants that might be suitable according to your needs."
-    )
-    print(
-        "You will receive information about the type of restaurant you would like to eat at."
-    )
-    print("It is then up to you to select a restaurant that matches these preferences.")
-    print(
-        "Since you are hungry, you want to try to find a restaurant as quickly as possible, without accidentally picking the wrong one.\n"
-    )
-    print(
-        "Let's start off with getting to know you a tiny bit, in what year where you born?\n"
-    )
-    valid = False
-    while not valid:
-        try:
-            birthyear_int = int(input())
-        except ValueError:
-            print("Please enter a valid number.")
-        else:
-            if birthyear_int < 1900 or birthyear_int > 2022:
-                print("Please enter a birthyear between 1900 and 2022")
-            else:
-                valid = True
-    setup()
-
-    age = datetime.now().year - birthyear_int
-    random.shuffle(experiments)
+    birthyear_str = input("What year where you born in: ")
+    while not validate_int(birthyear_str, 1900, 2022):
+        birthyear_str = input("Please provide a year between 1900, and 2022. ")
+    console.clear()
+    birthyear = int(birthyear_str)
+    age = datetime.now().year - birthyear
+    respid_data.loc[len(respid_data)] = (respid, age)
     for exp in experiments:
-        exp.run()
+        exp.run(respid)
+    queries_data.to_csv(QUERY_PATH, index=False)
+    respid_data.to_csv(RESPID_PATH, index=False)
 
 
 if __name__ == "__main__":
