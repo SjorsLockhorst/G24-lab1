@@ -11,7 +11,6 @@ python-dateutil==2.8.2
 python-Levenshtein==0.20.6
 pytz==2022.4
 rich==10.16.2
-rich-tools==0.5.0
 scikit-learn==1.0.2
 scipy==1.7.3
 six==1.16.0
