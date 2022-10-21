@@ -351,7 +351,6 @@ class RecommendPlaceState(StateInterface):
                 message += information.inferences.message
             sentence = input(message)
             new_information = match_request(sentence, information)
-            print(new_recommendations)
             return sentence.lower(), new_information, new_recommendations
         return NOT_FOUND, information, new_recommendations
 
