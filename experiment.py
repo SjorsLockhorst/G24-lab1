@@ -219,7 +219,9 @@ def start_raw_data_search(query_task: QueryTask, table=table):
     print(query_task.user_prompt)
     if query_task.extra_info:
         print(query_task.extra_info)
-    selected_id = print("Restaurant id? ")
+    selected_id = print(
+        "Fill in restaurant id (number in first column) and press Enter to confirm: "
+    )
     valid = False
     start = time.time()
     while not valid:
@@ -227,10 +229,10 @@ def start_raw_data_search(query_task: QueryTask, table=table):
         try:
             selected_id_int = int(selected_id)
         except ValueError:
-            print("Please enter a valid number.")
+            print("Please enter a valid number: ")
         else:
             if selected_id_int < 0 or selected_id_int >= len(df):
-                print(f"Please enter a number between 0 and {len(df)}")
+                print(f"Please enter a number between 0 and {len(df)}: ")
             else:
                 valid = True
     end = time.time()
