@@ -219,8 +219,10 @@ def start_raw_data_search(query_task: QueryTask, table=table):
     print(query_task.user_prompt)
     if query_task.extra_info:
         print(query_task.extra_info)
+    print()
     selected_id = print(
-        "Fill in restaurant id (number in first column) and press Enter to confirm: "
+        "Fill in restaurant id (number in first column) and press Enter to confirm: ",
+        end="",
     )
     valid = False
     start = time.time()
