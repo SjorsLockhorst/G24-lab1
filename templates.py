@@ -135,11 +135,16 @@ def match_food(sentence, information, use_levenshtein_keywords=True):
 
 def is_close_to_any(word, known_words, minimum_dist=3):
     """From a list of words, find those words who are close to some known words."""
-    return [
-        known_word
-        for known_word in known_words
-        if distance(word, known_word) <= minimum_dist
-    ]
+    try:
+        results = [
+            known_word
+            for known_word in known_words
+            if distance(word, known_word) <= minimum_dist
+        ]
+    # AAAHHHHHH
+    except Exception:
+        return []
+    return results
 
 
 def match_template(sentence, pattern, known_words, information, group=0):

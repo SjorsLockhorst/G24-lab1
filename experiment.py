@@ -112,17 +112,26 @@ ROMANTIC_TEXT = "A restaurant is romantic when you can stay a long time."
 
 raw_query_tasks: List[QueryTask] = [
     QueryTask(
-        1, "Find a cheap place in the south, any food type.", [10, 14, 37, 43, 54]
+        1,
+        "Find a cheap place in the south, any food type, any pricerange.",
+        [10, 14, 37, 43, 54],
     ),
-    QueryTask(2, "Find a European place in the centre.", [26, 32, 47, 96, 106]),
+    QueryTask(
+        2,
+        "Find a European place in the centre, any pricerange.",
+        [26, 32, 47, 96, 106],
+    ),
     QueryTask(
         3,
-        "Find a touristic place in the centre that serves Polynesian food.",
+        "Find a touristic place in the centre that serves Polynesian food, any pricerange.",
         [66],
         TOURISTIC_TEXT,
     ),
     QueryTask(
-        4, "Find a romantic place in the west part of town.", [46], ROMANTIC_TEXT
+        4,
+        "Find a romantic place in the west part of town, any food type, any pricerange.",
+        [46],
+        ROMANTIC_TEXT,
     ),
     QueryTask(
         5,
@@ -133,14 +142,28 @@ raw_query_tasks: List[QueryTask] = [
 
 dialog_system_query_tasks: List[QueryTask] = [
     QueryTask(
-        1, "Find an expensive place in the north, any food type.", [7, 8, 9, 39, 94]
+        1,
+        "Find an expensive place in the north, any food type.",
+        [7, 8, 9, 39, 94],
     ),
-    QueryTask(2, "Find a Chinese place in the south.", [11, 14, 43, 49, 54]),
-    QueryTask(3, "Find a touristic place in the south that serves Chinese food.", [43]),
-    QueryTask(4, "Find a romantic place in the north part of town.", [1]),
+    QueryTask(
+        2,
+        "Find a Chinese place in the south, any pricerange.",
+        [11, 14, 43, 49, 54],
+    ),
+    QueryTask(
+        3,
+        "Find a touristic place in the south that serves Chinese food, any pricerange.",
+        [43],
+    ),
+    QueryTask(
+        4,
+        "Find a romantic place in the north part of town, any food type any pricerange.",
+        [1],
+    ),
     QueryTask(
         5,
-        "Find a moderately priced, modern European place in the west part of town. If there is none, try anywhere else in town.",
+        "Find a place that has a moderate pricerange, that serves modern European in the west part of town. If there is none, try anywhere else in town.",
         [1, 51],
     ),
 ]
@@ -149,7 +172,7 @@ dialog_system_query_tasks: List[QueryTask] = [
 def setup(clear=True):
     answer = ""
     while answer != "yes":
-        answer = input("Are you ready? (type yes to continue): ")
+        answer = input("Are you ready? (type yes and press Enter to continue): ")
     if clear:
         console.clear()
 

@@ -327,7 +327,6 @@ class RecommendPlaceState(StateInterface):
     """State that picks a restaurant recommendation for the user"""
 
     def activate(self, information, recommendations):
-        print(recommendations)
         try:
             new_recommendations = recommendations.drop(index=len(data))
         except KeyError:
@@ -374,7 +373,7 @@ class NotFoundState(StateInterface):
             message += f" that serves {information.food} food"
         if information.inferences:
             message += f" that {information.inferences.consequent_sent}."
-        message += "\nPlease try again.\n"
+        message += "\nPlease adjust your requirements to find a restaurant.\n"
         sentence = input(message)
         information.update(get_information(sentence))
         return sentence.lower(), information, data
