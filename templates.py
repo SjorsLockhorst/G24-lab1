@@ -10,10 +10,14 @@ def match_by_keywords(sentence, keywords, information, use_levenshtein=False):
     sentence = sentence.lower().strip()
     keyword_regex = rf"\b({'|'.join(keywords)})\b"
     result = re.search(keyword_regex, sentence)
+    words = sentence.split()
+    if len(words) == 1:
+        if words[0] in {"all", "any"}:
+            return "any"
     if result:
         return result.group(1)
     if use_levenshtein:
-        for word in sentence.split():
+        for word in words:
             corrections = is_close_to_any(word, keywords)
             for correction in corrections:
                 response = input(
@@ -62,7 +66,7 @@ def match_area(sentence, information, use_levenshtein_keywords=True):
     """Matches the template for area against a user input."""
     sentence = sentence.lower().strip()
     KNOWN_AREAS = {"west", "north", "south", "centre", "east"}
-    FIRST_PATT = r"\b(\w+)\spart\b"
+    FIRST_PATT = r"\b(\w+)\s(part|area)\b"
     SECOND_PATT = r"(in the|somewhere)\s(\w+)"
     first_match = match_template(
         sentence, FIRST_PATT, KNOWN_AREAS, information, group=1
