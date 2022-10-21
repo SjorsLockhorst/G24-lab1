@@ -128,7 +128,7 @@ def match_food(sentence, information, use_levenshtein_keywords=True):
         "catalan",
     }
 
-    PATTERN = r"\b(\w+)\sfood|cuisine|kitchen|restaurant|place|type\b"
+    PATTERN = r"\b(\w+)\s(food|cuisine|kitchen|restaurant|place|type)\b"
     match = match_template(sentence, PATTERN, KNOWN_FOODS, information, group=1)
     if not match:
         return match_by_keywords(
