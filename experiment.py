@@ -231,10 +231,10 @@ def start_raw_data_search(query_task: QueryTask, table=table):
         try:
             selected_id_int = int(selected_id)
         except ValueError:
-            print("Please enter a valid number: ")
+            print("Please enter a valid number: ", end="")
         else:
             if selected_id_int < 0 or selected_id_int >= len(df):
-                print(f"Please enter a number between 0 and {len(df)}: ")
+                print(f"Please enter a number between 0 and {len(df)}: ", end="")
             else:
                 valid = True
     end = time.time()
