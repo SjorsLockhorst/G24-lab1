@@ -214,6 +214,7 @@ def start_raw_data_search(query_task: QueryTask, table=table):
         print(query_task.extra_info)
     setup()
     print()
+    print(query_task.user_prompt)
     print(table)
     print(query_task.user_prompt)
     if query_task.extra_info:
