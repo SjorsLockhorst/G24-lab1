@@ -113,7 +113,7 @@ ROMANTIC_TEXT = "A restaurant is romantic when you can stay a long time."
 raw_query_tasks: List[QueryTask] = [
     QueryTask(
         1,
-        "Find a cheap place in the south, any food type, any pricerange.",
+        "Find a cheap place in the south, any food type.",
         [10, 14, 37, 43, 54],
     ),
     QueryTask(
@@ -158,7 +158,7 @@ dialog_system_query_tasks: List[QueryTask] = [
     ),
     QueryTask(
         4,
-        "Find a romantic place in the north part of town, any food type any pricerange.",
+        "Find a romantic place in the north part of town, any food type and any pricerange.",
         [1],
     ),
     QueryTask(
