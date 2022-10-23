@@ -249,15 +249,15 @@ def start_raw_data_search(query_task: QueryTask, table=table):
 
 
 dialog_experiment = Experiment(
-    "Dialog system experiment",
-    "You will now search for restaurants using the dialog system. Please read the instructions carefully before starting.",
+    "Using a chat bot to find restaurants",
+    "You will now search for restaurants using a chat bot. Please read the instructions about the chatbot carefully before starting.",
     dialog_system_query_tasks,
     start_dialog_system,
     True,
 )
 raw_data_experiment = Experiment(
-    "Raw data search experiment",
-    "You will now search for restaurants by doing a manual search. Please read the instructions carefully before starting.",
+    "Using the table search to find restaurants",
+    "You will now search for restaurants by doing a search in a table of restaurants. Please read the instructions about the table search carefully before starting.",
     raw_query_tasks,
     start_raw_data_search,
     False,
